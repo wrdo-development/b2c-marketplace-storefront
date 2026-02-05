@@ -28,7 +28,7 @@ export const Header = async ({ locale } : {
 
   const regions = await listRegions()
 
-  const wishlistCount = wishlist?.products?.length || 0
+  const wishlistCount = wishlist.products?.length || 0
 
   const { categories, parentCategories } = (await listCategories({ query: { include_ancestors_tree: true } })) as {
     categories: HttpTypes.StoreProductCategory[]

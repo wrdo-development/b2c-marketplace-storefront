@@ -23,6 +23,7 @@ export const Header = async ({ locale } : {
 
   let wishlist: Wishlist = {products: []}
   if (user) {
+
     wishlist = await getUserWishlists({countryCode: locale})
   }
 

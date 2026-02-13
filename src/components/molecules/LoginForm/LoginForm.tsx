@@ -55,16 +55,13 @@ const Form = () => {
     formData.append('email', data.email);
     formData.append('password', data.password);
 
-    try {
-      await login(formData);
+    const res = await login(formData);
 
+    if (res.success) {
       router.push('/user');
       await transferCard();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An error occurred. Please try again.';
-      toast.error({ title: message });
-
-      return;
+    } else {
+      toast.error({ title: res.message || 'An error occurred. Please try again.' });
     }
   };
 
@@ -85,7 +82,10 @@ const Form = () => {
   const authMessage = getAuthMessage();
 
   return (
-    <main className="container" data-testid="login-page">
+    <main
+      className="container"
+      data-testid="login-page"
+    >
       <div className="mx-auto mt-6 w-full max-w-xl space-y-4">
         {authMessage && (
           <Alert
@@ -95,9 +95,15 @@ const Form = () => {
             data-testid="login-auth-alert"
           />
         )}
-        <div className="rounded-sm border p-4" data-testid="login-form-container">
+        <div
+          className="rounded-sm border p-4"
+          data-testid="login-form-container"
+        >
           <h1 className="heading-md mb-8 uppercase text-primary">Log in</h1>
-          <form onSubmit={handleSubmit(submit)} data-testid="login-form">
+          <form
+            onSubmit={handleSubmit(submit)}
+            data-testid="login-form"
+          >
             <div className="space-y-4">
               <LabeledInput
                 label="E-mail"
@@ -126,7 +132,11 @@ const Form = () => {
               />
             </div>
 
-            <Link href="/forgot-password" className="block text-right label-md uppercase text-action-on-secondary mt-4" data-testid="login-forgot-password-link">
+            <Link
+              href="/forgot-password"
+              className="label-md mt-4 block text-right uppercase text-action-on-secondary"
+              data-testid="login-forgot-password-link"
+            >
               Forgot your password?
             </Link>
 
@@ -144,7 +154,10 @@ const Form = () => {
           <h2 className="heading-md mb-4 uppercase text-primary">
             Don&apos;t have an account yet?
           </h2>
-          <Link href="/register" data-testid="login-register-link">
+          <Link
+            href="/register"
+            data-testid="login-register-link"
+          >
             <Button
               variant="tonal"
               className="mt-8 flex w-full justify-center uppercase"

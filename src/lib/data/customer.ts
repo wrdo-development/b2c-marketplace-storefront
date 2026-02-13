@@ -113,23 +113,24 @@ export async function login(formData: FormData) {
     await setAuthToken(token as string);
     const customerCacheTag = await getCacheTag('customers');
     revalidateTag(customerCacheTag);
+    return { success: true };
   } catch (error: unknown) {
     const err = error as { status?: number; response?: { status?: number } };
     const status = err.status || err.response?.status;
 
     switch (status) {
       case 401:
-        throw new Error('Invalid email or password. Please try again.');
+        return { success: false, message: 'Invalid email or password. Please try again.' };
       case 404:
-        throw new Error('Account not found. Please check your email address.');
+        return { success: false, message: 'Account not found. Please check your email address.' };
       case 429:
-        throw new Error('Too many login attempts. Please try again later.');
+        return { success: false, message: 'Too many login attempts. Please try again later.' };
       case 500:
       case 502:
       case 503:
-        throw new Error('Server error. Please try again later.');
+        return { success: false, message: 'Server error. Please try again later.' };
       default:
-        throw new Error('Unable to log in. Please try again.');
+        return { success: false, message: 'Unable to log in. Please try again.' };
     }
   }
 }

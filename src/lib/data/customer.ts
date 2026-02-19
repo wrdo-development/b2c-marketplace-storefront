@@ -116,23 +116,10 @@ export async function login(formData: FormData) {
 
     return { success: true };
   } catch (error: unknown) {
-    const err = error as { status?: number; response?: { status?: number } };
-    const status = err.status || err.response?.status;
-
-    switch (status) {
-      case 401:
-        return { success: false, message: 'Invalid email or password. Please try again.' };
-      case 404:
-        return { success: false, message: 'Account not found. Please check your email address.' };
-      case 429:
-        return { success: false, message: 'Too many login attempts. Please try again later.' };
-      case 500:
-      case 502:
-      case 503:
-        return { success: false, message: 'Server error. Please try again later.' };
-      default:
-        return { success: false, message: 'Unable to log in. Please try again.' };
-    }
+    return {
+      success: false,
+      message: (error as Error)?.message || 'Unable to log in. Please try again.'
+    };
   }
 }
 

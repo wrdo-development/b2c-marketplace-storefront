@@ -1,30 +1,46 @@
-import {
-  CartItemsFooter,
-  CartItemsHeader,
-  CartItemsProducts,
-} from "@/components/cells"
-import { HttpTypes } from "@medusajs/types"
-import { groupItemsBySeller } from "@/lib/helpers/group-cart-items-by-seller"
-import { EmptyCart } from "./EmptyCart"
+import { HttpTypes } from '@medusajs/types';
 
-export const CartItems = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
-  if (!cart) return null
+import { CartItemsFooter, CartItemsHeader, CartItemsProducts } from '@/components/cells';
+import { groupItemsBySeller } from '@/lib/helpers/group-cart-items-by-seller';
+import { Wishlist } from '@/types/wishlist';
 
-  const groupedItems = groupItemsBySeller(cart)
+import { EmptyCart } from './EmptyCart';
 
-  if (!Object.keys(groupedItems).length) return <EmptyCart />
+export const CartItems = ({
+  cart,
+  user,
+  wishlist
+}: {
+  cart: HttpTypes.StoreCart | null;
+  user?: HttpTypes.StoreCustomer | null;
+  wishlist?: Wishlist;
+}) => {
+  if (!cart) return null;
 
-  return Object.keys(groupedItems).map((key) => (
-    <div key={key} className="mb-4" data-testid={`cart-items-seller-${key}`}>
-      <CartItemsHeader seller={groupedItems[key]?.seller} />
+  const groupedItems = groupItemsBySeller(cart);
+
+  if (!Object.keys(groupedItems).length) return <EmptyCart />;
+
+  return Object.keys(groupedItems).map((key, index) => (
+    <div
+      key={key}
+      className="mb-10"
+      data-testid={`cart-items-seller-${key}`}
+    >
+      <CartItemsHeader
+        seller={groupedItems[key]?.seller}
+        parcelNumber={index + 1}
+      />
       <CartItemsProducts
         products={groupedItems[key].items || []}
         currency_code={cart.currency_code}
+        user={user}
+        wishlist={wishlist}
       />
       <CartItemsFooter
         currency_code={cart.currency_code}
         price={cart.shipping_subtotal}
       />
     </div>
-  ))
-}
+  ));
+};

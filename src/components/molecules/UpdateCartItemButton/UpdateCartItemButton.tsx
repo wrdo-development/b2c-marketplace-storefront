@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import { useRouter } from 'next/navigation';
 
-import { Button } from '@/components/atoms';
 import { useCartContext } from '@/components/providers';
+import { MinusThinIcon, PlusIcon } from '@/icons';
 import { toast } from '@/lib/helpers/toast';
 
 export const UpdateCartItemButton = ({
@@ -64,32 +64,26 @@ export const UpdateCartItemButton = ({
   const isIncreaseDisabled = isUpdatingItem || !lineItemId;
 
   return (
-    <div className="mt-2 flex items-center gap-4">
-      <Button
-        variant="tonal"
-        className="flex h-8 w-8 items-center justify-center"
+    <div className="flex items-center gap-1">
+      <button
+        className="flex size-10 items-center justify-center rounded-sm hover:bg-action-secondary-hover disabled:cursor-not-allowed disabled:opacity-40"
         disabled={isDecreaseDisabled}
         onClick={() => handleQuantityChange(pendingQuantity - 1)}
+        aria-label="Decrease quantity"
       >
-        -
-      </Button>
-      <span
-        className={`font-medium transition-all duration-300 ${
-          isDecreaseDisabled || isIncreaseDisabled
-            ? 'scale-95 text-secondary opacity-70'
-            : 'scale-100 text-primary opacity-100'
-        }`}
-      >
+        <MinusThinIcon size={20} />
+      </button>
+      <div className="label-md flex size-10 select-none items-center justify-center rounded-sm border bg-secondary text-center text-secondary">
         {pendingQuantity}
-      </span>
-      <Button
-        variant="tonal"
-        className="flex h-8 w-8 items-center justify-center"
+      </div>
+      <button
+        className="flex size-10 items-center justify-center rounded-sm hover:bg-action-secondary-hover disabled:cursor-not-allowed disabled:opacity-40"
         disabled={isIncreaseDisabled}
         onClick={() => handleQuantityChange(pendingQuantity + 1)}
+        aria-label="Increase quantity"
       >
-        +
-      </Button>
+        <PlusIcon size={20} />
+      </button>
     </div>
   );
 };

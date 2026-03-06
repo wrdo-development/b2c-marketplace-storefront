@@ -1,31 +1,28 @@
-import { Divider } from "@/components/atoms"
-import { SingleProductSeller } from "@/types/product"
-import { format } from "date-fns"
-import { SellerAvatar } from "../SellerAvatar/SellerAvatar"
-import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
+import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedLink';
+import { SingleProductSeller } from '@/types/product';
+
+import { SellerAvatar } from '../SellerAvatar/SellerAvatar';
 
 export const CartItemsHeader = ({
   seller,
+  parcelNumber
 }: {
-  seller: SingleProductSeller
+  seller: SingleProductSeller;
+  parcelNumber: number;
 }) => {
   return (
     <LocalizedClientLink href={`/sellers/${seller.handle}`}>
-      <div className="border rounded-sm p-4 flex gap-4 items-center">
-        <SellerAvatar photo={seller.photo} size={32} alt={seller.name} />
-
-        <div className="lg:flex gap-2">
-          <p className="uppercase heading-xs">{seller.name}</p>
-          {seller.id !== "fleek" && (
-            <div className="flex items-center gap-2">
-              <Divider square />
-              <p className="label-md text-secondary">
-                Joined: {format(seller.created_at || "", "yyyy-MM-dd")}
-              </p>
-            </div>
-          )}
+      <div className="flex items-center justify-between rounded-sm border p-4">
+        <div className="flex items-center gap-1">
+          <p className="label-md text-primary">Parcel #{parcelNumber} delivered by</p>
+          <p className="heading-xs uppercase text-primary">{seller.name}</p>
         </div>
+        <SellerAvatar
+          photo={seller.photo}
+          size={32}
+          alt={seller.name}
+        />
       </div>
     </LocalizedClientLink>
-  )
-}
+  );
+};

@@ -1,13 +1,15 @@
-import Image from "next/image"
+import Image from 'next/image';
 
 export const SellerAvatar = ({
-  photo = "",
+  photo = '',
   size = 32,
-  alt = "",
+  alt = '',
+  className = ''
 }: {
-  photo?: string
-  size?: number
-  alt?: string
+  photo?: string;
+  size?: number;
+  alt?: string;
+  className?: string;
 }) => {
   return photo ? (
     <Image
@@ -15,17 +17,17 @@ export const SellerAvatar = ({
       alt={alt}
       width={size}
       height={size}
-      className="shrink-0"
+      className={`shrink-0 ${className}`}
       style={{ maxWidth: size, maxHeight: size }}
     />
   ) : (
     <Image
       src="/images/placeholder.svg"
       alt={alt}
-      className="opacity-30 w-8 h-8 shrink-0"
+      className={`h-8 w-8 shrink-0 opacity-30 ${className}`}
       width={32}
       height={32}
       style={{ maxWidth: 32, maxHeight: 32 }}
     />
-  )
-}
+  );
+};

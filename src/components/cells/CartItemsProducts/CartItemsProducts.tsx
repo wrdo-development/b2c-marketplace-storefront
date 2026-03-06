@@ -53,7 +53,7 @@ export const CartItemsProducts = ({
           >
             <LocalizedClientLink href={`/products/${product.product_handle}`}>
               <div
-                className="flex h-[132px] w-[100px] shrink-0 items-center justify-center"
+                className="flex h-[96px] w-[74px] shrink-0 items-center justify-center lg:h-[132px] lg:w-[100px]"
                 data-testid="cart-item-image"
               >
                 {product.thumbnail ? (
@@ -62,7 +62,7 @@ export const CartItemsProducts = ({
                     alt="Product thumbnail"
                     width={100}
                     height={132}
-                    className="h-[132px] w-[100px] rounded-[6px] object-cover"
+                    className="h-[96px] w-[74px] rounded-[6px] object-cover lg:h-[132px] lg:w-[100px]"
                   />
                 ) : (
                   <Image
@@ -76,7 +76,63 @@ export const CartItemsProducts = ({
               </div>
             </LocalizedClientLink>
 
-            <div className="min-w-0 flex-1 p-4">
+            {/* Mobile layout */}
+            <div className="flex flex-1 gap-4 p-3 lg:hidden">
+              <div className="flex min-w-0 flex-1 flex-col gap-3">
+                <LocalizedClientLink href={`/products/${product.product_handle}`}>
+                  <div>
+                    {vendor && <p className="label-md text-secondary">{vendor}</p>}
+                    <h3
+                      className="heading-xs truncate text-primary"
+                      data-testid="cart-item-title"
+                    >
+                      {product.product_title}
+                    </h3>
+                  </div>
+                </LocalizedClientLink>
+                <div
+                  className="label-md text-secondary"
+                  data-testid="cart-item-details"
+                >
+                  {options?.map(({ option, id, value }) => (
+                    <p key={id}>
+                      {option?.title}: <span className="text-primary">{value}</span>
+                    </p>
+                  ))}
+                </div>
+                <div data-testid="cart-item-price">
+                  {hasDiscount && (
+                    <p className="label-md text-secondary line-through">{originalPrice}</p>
+                  )}
+                  <p className="label-lg text-primary">{total}</p>
+                </div>
+              </div>
+              <div className="flex w-[40px] shrink-0 flex-col items-end justify-between">
+                <div className="flex flex-col gap-2">
+                  <WishlistButton
+                    productId={product.product_id!}
+                    wishlist={wishlist}
+                    user={user}
+                    variant="text"
+                  />
+                  {delete_item && <DeleteCartItemButton id={product.id} />}
+                </div>
+                {change_quantity && (
+                  <UpdateCartItemButton
+                    quantity={product.quantity}
+                    lineItemId={product.id}
+                  />
+                )}
+                {!change_quantity && (
+                  <p className="label-md text-secondary">
+                    <span className="text-primary">{product.quantity}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop layout */}
+            <div className="hidden min-w-0 flex-1 p-4 lg:block">
               <LocalizedClientLink href={`/products/${product.product_handle}`}>
                 <div className="mb-4">
                   {vendor && <p className="label-md text-secondary">{vendor}</p>}
@@ -101,7 +157,7 @@ export const CartItemsProducts = ({
             </div>
 
             {change_quantity && (
-              <div className="flex shrink-0 items-center justify-center px-4">
+              <div className="hidden shrink-0 items-center justify-center px-4 lg:flex">
                 <UpdateCartItemButton
                   quantity={product.quantity}
                   lineItemId={product.id}
@@ -110,14 +166,14 @@ export const CartItemsProducts = ({
             )}
 
             {!change_quantity && (
-              <div className="flex shrink-0 items-center justify-center px-4">
+              <div className="hidden shrink-0 items-center justify-center px-4 lg:flex">
                 <p className="label-md text-secondary">
                   Quantity: <span className="text-primary">{product.quantity}</span>
                 </p>
               </div>
             )}
 
-            <div className="flex shrink-0 flex-col items-end justify-between p-2">
+            <div className="hidden shrink-0 flex-col items-end justify-between p-2 lg:flex">
               <div className="flex items-start gap-1">
                 <WishlistButton
                   productId={product.product_id!}

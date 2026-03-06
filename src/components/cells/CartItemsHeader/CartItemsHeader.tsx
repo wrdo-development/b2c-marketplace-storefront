@@ -13,14 +13,23 @@ export const CartItemsHeader = ({
   return (
     <LocalizedClientLink href={`/sellers/${seller.handle}`}>
       <div className="flex items-center justify-between rounded-sm border p-4">
-        <div className="flex items-center gap-1">
-          <p className="label-md text-primary">Parcel #{parcelNumber} delivered by</p>
-          <p className="heading-xs uppercase text-primary">{seller.name}</p>
+        <div className="flex items-center gap-4">
+          <SellerAvatar
+            photo={seller.photo}
+            size={32}
+            alt={seller.name}
+            className="lg:hidden"
+          />
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-1">
+            <p className="label-md text-primary">Parcel #{parcelNumber} delivered by</p>
+            <p className="heading-xs uppercase text-primary">{seller.name}</p>
+          </div>
         </div>
         <SellerAvatar
           photo={seller.photo}
           size={32}
           alt={seller.name}
+          className="hidden lg:block"
         />
       </div>
     </LocalizedClientLink>

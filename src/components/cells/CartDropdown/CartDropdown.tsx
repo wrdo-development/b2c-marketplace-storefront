@@ -141,12 +141,17 @@ export const CartDropdown = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-4 px-8">
-                <h4 className="heading-md text-center uppercase">Your shopping cart is empty</h4>
-                <p className="py-4 text-center text-lg">Are you looking for inspiration?</p>
-                <LocalizedClientLink href="/categories">
-                  <Button className="w-full py-3">Explore Home Page</Button>
-                </LocalizedClientLink>
+              <div>
+                <div className="p-4">
+                  <p className="text-base font-light text-secondary">
+                    Your shopping cart is currently empty.
+                  </p>
+                </div>
+                <div className="border-t p-4">
+                  <LocalizedClientLink href="/categories">
+                    <Button className="h-12 w-full uppercase">Explore Products</Button>
+                  </LocalizedClientLink>
+                </div>
               </div>
             )}
           </div>

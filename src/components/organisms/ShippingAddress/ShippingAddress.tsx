@@ -6,7 +6,7 @@ import { mapKeys } from 'lodash';
 import { usePathname } from 'next/navigation';
 import { z } from 'zod';
 
-import { Input } from '@/components/atoms';
+import { Checkbox, Divider, Input } from '@/components/atoms';
 import AddressSelect from '@/components/cells/AddressSelect/AddressSelect';
 import CountrySelect from '@/components/cells/CountrySelect/CountrySelect';
 
@@ -19,6 +19,16 @@ const shippingSchema = z.object({
   'shipping_address.country_code': z.string().min(1, 'Please select country'),
   email: z.string().min(1, 'Please enter email'),
   'shipping_address.phone': z.string().min(1, 'Please enter phone number')
+});
+
+const billingSchema = z.object({
+  'billing_address.first_name': z.string().min(1, 'Please enter first name'),
+  'billing_address.last_name': z.string().min(1, 'Please enter last name'),
+  'billing_address.address_1': z.string().min(1, 'Please enter address'),
+  'billing_address.postal_code': z.string().min(1, 'Please enter post code'),
+  'billing_address.city': z.string().min(1, 'Please enter city'),
+  'billing_address.country_code': z.string().min(1, 'Please select country'),
+  'billing_address.phone': z.string().min(1, 'Please enter phone number')
 });
 
 export type ShippingAddressHandle = {
@@ -37,6 +47,19 @@ const ShippingAddress = forwardRef<
   const pathname = usePathname();
 
   const locale = pathname.split('/')[1];
+  const [billingFormData, setBillingFormData] = useState<Record<string, any>>({
+    'billing_address.first_name': cart?.billing_address?.first_name || '',
+    'billing_address.last_name': cart?.billing_address?.last_name || '',
+    'billing_address.address_1': cart?.billing_address?.address_1 || '',
+    'billing_address.company': cart?.billing_address?.company || '',
+    'billing_address.tax_id': (cart?.billing_address?.metadata?.tax_id as string) || '',
+    'billing_address.postal_code': cart?.billing_address?.postal_code || '',
+    'billing_address.city': cart?.billing_address?.city || '',
+    'billing_address.country_code': cart?.billing_address?.country_code || locale,
+    'billing_address.province': cart?.billing_address?.province || '',
+    'billing_address.phone': cart?.billing_address?.phone || ''
+  });
+
   const [formData, setFormData] = useState<Record<string, any>>({
     'shipping_address.first_name': cart?.shipping_address?.first_name || '',
     'shipping_address.last_name': cart?.shipping_address?.last_name || '',
@@ -51,6 +74,7 @@ const ShippingAddress = forwardRef<
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [billingErrors, setBillingErrors] = useState<Record<string, string>>({});
 
   const addressesInRegion = useMemo(
     () => customer?.addresses.filter(a => a.country_code && a.country_code === locale),
@@ -119,20 +143,52 @@ const ShippingAddress = forwardRef<
     });
   };
 
-  useImperativeHandle(ref, () => ({
-    validate() {
-      const result = shippingSchema.safeParse(formData);
-      if (result.success) {
-        setErrors({});
-        return true;
+  const handleBillingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setBillingFormData({
+      ...billingFormData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      validate() {
+        let isValid = true;
+
+        const shippingResult = shippingSchema.safeParse(formData);
+        if (!shippingResult.success) {
+          const fieldErrors = shippingResult.error.flatten().fieldErrors;
+          setErrors(
+            Object.fromEntries(
+              Object.entries(fieldErrors).map(([key, msgs]) => [key, msgs?.[0] ?? ''])
+            )
+          );
+          isValid = false;
+        } else {
+          setErrors({});
+        }
+
+        if (!checked) {
+          const billingResult = billingSchema.safeParse(billingFormData);
+          if (!billingResult.success) {
+            const fieldErrors = billingResult.error.flatten().fieldErrors;
+            setBillingErrors(
+              Object.fromEntries(
+                Object.entries(fieldErrors).map(([key, msgs]) => [key, msgs?.[0] ?? ''])
+              )
+            );
+            isValid = false;
+          } else {
+            setBillingErrors({});
+          }
+        }
+
+        return isValid;
       }
-      const fieldErrors = result.error.flatten().fieldErrors;
-      setErrors(
-        Object.fromEntries(Object.entries(fieldErrors).map(([key, msgs]) => [key, msgs?.[0] ?? '']))
-      );
-      return false;
-    }
-  }));
+    }),
+    [formData, billingFormData, checked]
+  );
 
   return (
     <>
@@ -259,6 +315,112 @@ const ShippingAddress = forwardRef<
           data-testid="shipping-phone-input"
         />
       </div>
+      <div className="mt-4">
+        <Checkbox
+          name="same_as_billing"
+          label="Billing address same as shipping address"
+          checked={checked}
+          onChange={() => onChange()}
+        />
+      </div>
+      {!checked && (
+        <>
+          <Divider className="my-4" />
+          <p className="heading-md mb-4 uppercase text-primary">Billing address</p>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Input
+              label="First name"
+              name="billing_address.first_name"
+              autoComplete="given-name"
+              value={billingFormData['billing_address.first_name']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.first_name']}
+            />
+            <Input
+              label="Last name"
+              name="billing_address.last_name"
+              autoComplete="family-name"
+              value={billingFormData['billing_address.last_name']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.last_name']}
+            />
+            <Input
+              label="Company name (optional)"
+              name="billing_address.company"
+              autoComplete="organization"
+              value={billingFormData['billing_address.company']}
+              onChange={handleBillingChange}
+            />
+            <Input
+              label="Tax ID"
+              name="billing_address.tax_id"
+              value={billingFormData['billing_address.tax_id']}
+              onChange={handleBillingChange}
+            />
+            <Input
+              label="Address"
+              name="billing_address.address_1"
+              autoComplete="address-line1"
+              value={billingFormData['billing_address.address_1']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.address_1']}
+            />
+            <Input
+              label="Post code"
+              name="billing_address.postal_code"
+              autoComplete="postal-code"
+              value={billingFormData['billing_address.postal_code']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.postal_code']}
+            />
+            <Input
+              label="City"
+              name="billing_address.city"
+              autoComplete="address-level2"
+              value={billingFormData['billing_address.city']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.city']}
+            />
+            <div className="flex flex-col gap-1">
+              <CountrySelect
+                name="billing_address.country_code"
+                autoComplete="country"
+                region={cart?.region}
+                value={billingFormData['billing_address.country_code']}
+                onChange={handleBillingChange}
+                required
+                error={!!billingErrors['billing_address.country_code']}
+              />
+              {billingErrors['billing_address.country_code'] && (
+                <p className="label-sm text-negative">
+                  {billingErrors['billing_address.country_code']}
+                </p>
+              )}
+            </div>
+            <Input
+              label="State / Province (optional)"
+              name="billing_address.province"
+              autoComplete="address-level1"
+              value={billingFormData['billing_address.province']}
+              onChange={handleBillingChange}
+            />
+            <Input
+              label="Phone number"
+              name="billing_address.phone"
+              autoComplete="tel"
+              value={billingFormData['billing_address.phone']}
+              onChange={handleBillingChange}
+              required
+              errorMessage={billingErrors['billing_address.phone']}
+            />
+          </div>
+        </>
+      )}
     </>
   );
 });

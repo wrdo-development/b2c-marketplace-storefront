@@ -125,32 +125,34 @@ export const CartAddressSection = ({
             </div>
           </div>
         ) : (
-          <div className="border-t border-primary p-4">
-            <div className="text-small-regular">
-              {cart && cart.shipping_address ? (
-                <div className="flex items-start gap-x-8">
-                  <div className="flex w-full items-start gap-x-1">
-                    <div>
-                      <p className="label-md font-bold">
-                        {cart.shipping_address.first_name} {cart.shipping_address.last_name}
-                      </p>
-                      <p className="label-md">
-                        {cart.shipping_address.address_1} {cart.shipping_address.address_2},{' '}
-                        {cart.shipping_address.postal_code} {cart.shipping_address.city},{' '}
-                        {cart.shipping_address.country_code?.toUpperCase()}
-                      </p>
-                      <p className="label-md">
-                        {cart.email}, {cart.shipping_address.phone}
-                      </p>
-                    </div>
-                  </div>
+          <div className="border-t border-primary">
+            {cart && cart.shipping_address ? (
+              <div className="p-2">
+                <div className="rounded-sm p-3">
+                  <p className="label-md text-primary">Shipping address</p>
+                  <p className="label-md whitespace-pre-wrap text-secondary">
+                    {`${cart.shipping_address.first_name} ${cart.shipping_address.last_name}\n${cart.shipping_address.address_1}${cart.shipping_address.address_2 ? ` ${cart.shipping_address.address_2}` : ''}\n${cart.shipping_address.postal_code} ${cart.shipping_address.city}, ${cart.shipping_address.country_code?.toUpperCase()}`}
+                  </p>
+                  <p className="label-md text-secondary">
+                    {cart.email}, {cart.shipping_address.phone}
+                  </p>
                 </div>
-              ) : (
-                <div>
-                  <Spinner />
+                <div className="rounded-sm p-3">
+                  <p className="label-md text-primary">Billing address</p>
+                  <p className="label-md text-secondary">
+                    {sameAsBilling
+                      ? 'Same as shipping address'
+                      : cart.billing_address
+                        ? `${cart.billing_address.first_name} ${cart.billing_address.last_name}, ${cart.billing_address.address_1}, ${cart.billing_address.postal_code} ${cart.billing_address.city}, ${cart.billing_address.country_code?.toUpperCase()}`
+                        : ''}
+                  </p>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="p-4">
+                <Spinner />
+              </div>
+            )}
           </div>
         )}
         {isAddress && !searchParams.get('step') && (

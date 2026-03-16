@@ -45,7 +45,9 @@ export const CartAddressSection = ({
     cart?.shipping_address.postal_code &&
     cart?.shipping_address.country_code
   );
-  const isOpen = searchParams.get('step') === 'address' || !isAddress;
+
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const isOpen = !isAddress || isEditOpen;
 
   const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
     !cart?.billing_address || compareAddresses(cart.shipping_address, cart.billing_address)
@@ -66,8 +68,13 @@ export const CartAddressSection = ({
       setError(result);
       return;
     }
-    router.replace(`${pathname}?step=delivery`);
-    router.refresh();
+    if (isEditOpen) {
+      setIsEditOpen(false);
+      router.refresh();
+    } else {
+      router.replace(`${pathname}?step=delivery`);
+      router.refresh();
+    }
   };
 
   useEffect(() => {
@@ -77,7 +84,7 @@ export const CartAddressSection = ({
   }, [isAddress]);
 
   const handleEdit = () => {
-    router.replace(pathname + '?step=address');
+    setIsEditOpen(true);
   };
 
   return (
@@ -132,7 +139,7 @@ export const CartAddressSection = ({
                 variant="filled"
                 disabled={isPending}
               >
-                PROCEED TO DELIVERY
+                {isEditOpen ? 'SAVE' : 'PROCEED TO DELIVERY'}
               </Button>
               <ErrorMessage
                 error={error}

@@ -1,24 +1,16 @@
 'use client';
 
-import { Fragment, useEffect, useState, useTransition, type FC } from 'react';
+import { useEffect, useState, useTransition, type FC } from 'react';
 
-import { Listbox, Transition } from '@headlessui/react';
-import { ChevronUpDown, Loader } from '@medusajs/icons';
 import type { HttpTypes } from '@medusajs/types';
-import { clx, Heading } from '@medusajs/ui';
-import clsx from 'clsx';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import { Button } from '@/components/atoms';
-import ErrorMessage from '@/components/molecules/ErrorMessage/ErrorMessage';
+import { Button, Divider, Radio } from '@/components/atoms';
 import { TickThinIcon } from '@/icons';
 import { removeShippingMethod, setShippingMethod } from '@/lib/data/cart';
 import { calculatePriceForShippingOption } from '@/lib/data/fulfillment';
 import { convertToLocale } from '@/lib/helpers/money';
 
-import { CartShippingMethodRow } from './CartShippingMethodRow';
-
-// Extended cart item product type to include seller
 type ExtendedStoreProduct = HttpTypes.StoreProduct & {
   seller?: {
     id: string;
@@ -26,14 +18,13 @@ type ExtendedStoreProduct = HttpTypes.StoreProduct & {
   };
 };
 
-// Cart item type definition
-type CartItem = {
+type CartItem = HttpTypes.StoreCartLineItem & {
   product?: ExtendedStoreProduct;
-  // Include other cart item properties as needed
 };
 
 export type StoreCardShippingMethod = HttpTypes.StoreCartShippingOption & {
   seller_id?: string;
+  seller_name?: string;
   service_zone?: {
     fulfillment_set: {
       type: string;
@@ -41,27 +32,31 @@ export type StoreCardShippingMethod = HttpTypes.StoreCartShippingOption & {
   };
 };
 
+type ShippingOption = StoreCardShippingMethod & {
+  rules: any;
+  seller_id: string;
+  seller_name?: string;
+  price_type: string;
+  id: string;
+  amount?: number;
+};
+
 type ShippingProps = {
   cart: Omit<HttpTypes.StoreCart, 'items'> & {
     items?: CartItem[];
   };
-  availableShippingMethods:
-    | (StoreCardShippingMethod &
-        {
-          rules: any;
-          seller_id: string;
-          price_type: string;
-          id: string;
-          amount?: number;
-        }[])
-    | null;
+  availableShippingMethods: ShippingOption[] | null;
 };
 
 const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShippingMethods }) => {
-  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
   const [calculatedPricesMap, setCalculatedPricesMap] = useState<Record<string, number>>({});
+  const [isLoadingPrices, setIsLoadingPrices] = useState(false);
+  const [selectedMethodsBySeller, setSelectedMethodsBySeller] = useState<Record<string, string>>(
+    {}
+  );
+  const [showValidation, setShowValidation] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPendingDeleteRow, startTransitionDeleteRow] = useTransition();
+  const [isPending, startTransition] = useTransition();
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -69,113 +64,129 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
 
   const isOpen = searchParams.get('step') === 'delivery';
 
-  console.log(availableShippingMethods);
-
-  const _shippingMethods = availableShippingMethods?.filter(
+  const shippingOptions = availableShippingMethods?.filter(
     sm => sm.rules?.find((rule: any) => rule.attribute === 'is_return')?.value !== 'true'
   );
 
+  const groupedBySeller = (shippingOptions ?? []).reduce<Record<string, ShippingOption[]>>(
+    (acc, method) => {
+      const sellerId = method.seller_id;
+      if (!sellerId) return acc;
+      if (!acc[sellerId]) acc[sellerId] = [];
+      acc[sellerId]!.push(method);
+      return acc;
+    },
+    {}
+  );
+
+  const sellerIds = Object.keys(groupedBySeller).filter(
+    id => groupedBySeller[id]?.[0]?.seller_name
+  );
+
+  // Pre-fill selections from cart's existing shipping methods
   useEffect(() => {
-    const set = new Set<string>();
-    cart.items?.forEach(item => {
-      if (item?.product?.seller?.id) {
-        set.add(item.product.seller.id);
-      }
-    });
-  }, [cart]);
-
-  useEffect(() => {
-    if (_shippingMethods?.length) {
-      const promises = _shippingMethods
-        .filter(sm => sm.price_type === 'calculated')
-        .map(sm => calculatePriceForShippingOption(sm.id, cart.id));
-
-      if (promises.length) {
-        Promise.allSettled(promises).then(res => {
-          const pricesMap: Record<string, number> = {};
-          res
-            .filter(r => r.status === 'fulfilled')
-            .forEach(p => (pricesMap[p.value?.id || ''] = p.value?.amount!));
-
-          setCalculatedPricesMap(pricesMap);
-          setIsLoadingPrices(false);
-        });
-      }
-    }
-  }, [availableShippingMethods, _shippingMethods, cart.id]);
-
-  const handleSubmit = () => {
-    router.push(pathname + '?step=payment', { scroll: false });
-  };
-
-  const handleSetShippingMethod = async (id: string | null) => {
-    if (!id) {
-      return;
-    }
-
-    try {
-      setError(null);
-      setIsLoadingPrices(true);
-      const res = await setShippingMethod({
-        cartId: cart.id,
-        shippingMethodId: id
-      });
-      if (!res.ok) {
-        return setError(res.error?.message);
-      }
-    } catch (error: any) {
-      setError(
-        error?.message?.replace('Error setting up the request: ', '') || 'An error occurred'
+    if (!cart.shipping_methods?.length) return;
+    const preSelected: Record<string, string> = {};
+    for (const sellerId of sellerIds) {
+      const options = groupedBySeller[sellerId] ?? [];
+      const match = cart.shipping_methods.find(sm =>
+        options.some(opt => opt.id === sm.shipping_option_id)
       );
-    } finally {
-      setIsLoadingPrices(false);
-      router.refresh();
+      if (match?.shipping_option_id) {
+        preSelected[sellerId] = match.shipping_option_id;
+      }
     }
-  };
+    if (Object.keys(preSelected).length > 0) {
+      setSelectedMethodsBySeller(preSelected);
+    }
+  }, [cart.shipping_methods]);
 
-  const handleRemoveShippingMethod = (methodId: string) => {
-    startTransitionDeleteRow(async () => {
-      await removeShippingMethod(methodId);
+  // Calculate prices for "calculated" type options
+  useEffect(() => {
+    const calculatedOptions = (shippingOptions ?? []).filter(sm => sm.price_type === 'calculated');
+    if (!calculatedOptions.length) return;
+
+    setIsLoadingPrices(true);
+    Promise.allSettled(
+      calculatedOptions.map(sm => calculatePriceForShippingOption(sm.id, cart.id))
+    ).then(results => {
+      const map: Record<string, number> = {};
+      results
+        .filter(r => r.status === 'fulfilled')
+        .forEach(r => {
+          if (r.value?.id) map[r.value.id] = r.value.amount!;
+        });
+      setCalculatedPricesMap(map);
+      setIsLoadingPrices(false);
     });
-    router.refresh();
-  };
+  }, [availableShippingMethods, cart.id]);
 
   useEffect(() => {
     setError(null);
+    setShowValidation(false);
   }, [isOpen]);
 
-  const groupedBySellerId = _shippingMethods?.reduce((acc: any, method) => {
-    const sellerId = method.seller_id!;
+  const getOptionPrice = (option: ShippingOption): string | null => {
+    const amount = option.price_type === 'flat' ? option.amount : calculatedPricesMap[option.id];
+    if (amount == null) return null;
+    return convertToLocale({ amount, currency_code: cart.currency_code });
+  };
 
-    if (!acc[sellerId]) {
-      acc[sellerId] = [];
+  const getItemsForSeller = (sellerId: string): CartItem[] =>
+    (cart.items ?? []).filter(item => item.product?.seller?.id === sellerId);
+
+  const handleSelectMethod = (sellerId: string, optionId: string) => {
+    setSelectedMethodsBySeller(prev => ({ ...prev, [sellerId]: optionId }));
+    setShowValidation(false);
+  };
+
+  const handleSubmit = () => {
+    const allSelected = sellerIds.every(id => selectedMethodsBySeller[id]);
+    if (!allSelected) {
+      setShowValidation(true);
+      return;
     }
 
-    const amount = Number(
-      method.price_type === 'flat' ? method.amount : calculatedPricesMap[method.id]
-    );
-
-    if (!isNaN(amount)) {
-      acc[sellerId]?.push(method);
-    }
-
-    return acc;
-  }, {});
+    setError(null);
+    startTransition(async () => {
+      try {
+        for (const sellerId of sellerIds) {
+          const optionId = selectedMethodsBySeller[sellerId]!;
+          const res = await setShippingMethod({ cartId: cart.id, shippingMethodId: optionId });
+          if (!res.ok) {
+            setError(res.error?.message ?? 'An error occurred');
+            return;
+          }
+        }
+        router.push(pathname + '?step=payment', { scroll: false });
+        router.refresh();
+      } catch (err: any) {
+        setError(
+          err?.message?.replace('Error setting up the request: ', '') ?? 'An error occurred'
+        );
+      }
+    });
+  };
 
   const handleEdit = () => {
-    router.replace(pathname + '?step=delivery');
+    startTransition(async () => {
+      if (cart.shipping_methods?.length) {
+        await Promise.all(cart.shipping_methods.map(sm => removeShippingMethod(sm.id)));
+      }
+      router.replace(pathname + '?step=delivery');
+      router.refresh();
+    });
   };
-  const isEditEnabled = !isOpen && !!cart?.shipping_methods?.length;
+
   const hasShipping = (cart.shipping_methods?.length ?? 0) > 0;
-  const isDeliveryPending = !isOpen && !hasShipping;
   const isDeliveryCompleted = !isOpen && hasShipping;
 
-  const filteredGroupedBySellerId = Object.keys(groupedBySellerId || {}).filter(
-    key => groupedBySellerId?.[key]?.[0]?.seller_name
-  );
-
   return (
-    <div className="overflow-hidden rounded-lg border">
+    <div
+      className="overflow-hidden rounded-sm border"
+      data-testid="checkout-step-delivery"
+    >
+      {/* Section heading */}
       <div className="flex items-center justify-between bg-component-secondary p-4">
         <div className="flex items-center gap-2">
           {isDeliveryCompleted ? (
@@ -187,7 +198,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
           )}
           <span className="heading-md uppercase text-primary">DELIVERY</span>
         </div>
-        {isEditEnabled && (
+        {isDeliveryCompleted && !isOpen && (
           <Button
             onClick={handleEdit}
             variant="tonal"
@@ -196,138 +207,144 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
           </Button>
         )}
       </div>
+
       {isOpen ? (
-        <div className="border-t border-primary p-4">
-          <div className="grid">
-            <div data-testid="delivery-options-container">
-              <div className="pb-8 pt-2 md:pt-0">
-                {filteredGroupedBySellerId.length === 0
-                  ? 'No shipping options available'
-                  : filteredGroupedBySellerId.map(key => (
-                      <div
-                        key={key}
-                        className="mb-4"
-                      >
-                        <Heading
-                          level="h3"
-                          className="mb-2"
-                        >
-                          {groupedBySellerId[key][0].seller_name}
-                        </Heading>
-                        <Listbox
-                          value={cart.shipping_methods?.[0]?.id}
-                          onChange={value => {
-                            handleSetShippingMethod(value);
-                          }}
-                        >
-                          <div className="relative">
-                            <Listbox.Button
-                              className={clsx(
-                                'text-base-regular relative flex h-12 w-full cursor-default items-center justify-between rounded-lg border bg-component-secondary px-4 text-left focus:outline-none focus-visible:border-gray-300 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300'
-                              )}
-                            >
-                              {({ open }) => (
-                                <>
-                                  <span className="block truncate">Choose delivery option</span>
-                                  <ChevronUpDown
-                                    className={clx('transition-rotate duration-200', {
-                                      'rotate-180 transform': open
-                                    })}
-                                  />
-                                </>
-                              )}
-                            </Listbox.Button>
-                            <Transition
-                              as={Fragment}
-                              leave="transition ease-in duration-100"
-                              leaveFrom="opacity-100"
-                              leaveTo="opacity-0"
-                            >
-                              <Listbox.Options
-                                className="text-small-regular border-top-0 absolute z-20 max-h-60 w-full overflow-auto rounded-lg border bg-white focus:outline-none sm:text-sm"
-                                data-testid="shipping-address-options"
-                              >
-                                {groupedBySellerId[key].map((option: any) => (
-                                  <Listbox.Option
-                                    className="relative cursor-pointer select-none border-b py-4 pl-6 pr-10 hover:bg-gray-50"
-                                    value={option.id}
-                                    key={option.id}
+        /* Editing state */
+        <div className="border-t border-primary">
+          {sellerIds.length === 0 ? (
+            <p className="label-md p-4 text-secondary">No shipping options available</p>
+          ) : (
+            <>
+              {sellerIds.map((sellerId, parcelIndex) => {
+                const options = groupedBySeller[sellerId] ?? [];
+                const sellerName = options[0]?.seller_name ?? '';
+                const items = getItemsForSeller(sellerId);
+                const selectedOptionId = selectedMethodsBySeller[sellerId];
+                const hasError = showValidation && !selectedOptionId;
+
+                return (
+                  <div key={sellerId}>
+                    {parcelIndex > 0 && <Divider />}
+                    <div className="p-2">
+                      {/* Parcel heading row */}
+                      <div className="flex items-start gap-20 p-3">
+                        <span className="heading-sm min-w-0 flex-1 text-primary">
+                          Parcel {parcelIndex + 1}
+                        </span>
+                        {items.length > 0 && (
+                          <div className="flex shrink-0 gap-2">
+                            {items.map(
+                              item =>
+                                item.thumbnail && (
+                                  <div
+                                    key={item.id}
+                                    className="relative size-14 shrink-0 overflow-hidden rounded-sm border"
                                   >
-                                    {option.name}
-                                    {' - '}
-                                    {option.price_type === 'flat' ? (
-                                      convertToLocale({
-                                        amount: option.amount!,
-                                        currency_code: cart?.currency_code
-                                      })
-                                    ) : calculatedPricesMap[option.id] ? (
-                                      convertToLocale({
-                                        amount: calculatedPricesMap[option.id],
-                                        currency_code: cart?.currency_code
-                                      })
-                                    ) : isLoadingPrices ? (
-                                      <Loader />
-                                    ) : (
-                                      '-'
-                                    )}
-                                  </Listbox.Option>
-                                ))}
-                              </Listbox.Options>
-                            </Transition>
+                                    <img
+                                      src={item.thumbnail}
+                                      alt={item.title ?? ''}
+                                      className="size-full object-cover"
+                                    />
+                                  </div>
+                                )
+                            )}
                           </div>
-                        </Listbox>
+                        )}
+                        <div className="label-md flex w-[200px] shrink-0 items-center justify-end gap-1">
+                          <span className="text-secondary">Seller:</span>
+                          <span className="text-primary">{sellerName}</span>
+                        </div>
                       </div>
-                    ))}
-                {!!cart?.shipping_methods?.length && (
-                  <div className="flex flex-col">
-                    {cart.shipping_methods?.map(method => (
-                      <CartShippingMethodRow
-                        key={method.id}
-                        method={method}
-                        currency_code={cart.currency_code}
-                        onRemoveShippingMethod={handleRemoveShippingMethod}
-                      />
-                    ))}
+
+                      {/* Shipping options */}
+                      <div>
+                        {options.map(option => {
+                          const price = getOptionPrice(option);
+                          const isSelected = selectedOptionId === option.id;
+
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              className="flex w-full items-center gap-2 overflow-hidden rounded-sm py-2 pl-1 pr-3 hover:bg-component-secondary"
+                              onClick={() => handleSelectMethod(sellerId, option.id)}
+                            >
+                              <Radio
+                                selected={isSelected}
+                                hasError={hasError}
+                              />
+                              <span className="label-md flex-1 text-left text-primary">
+                                {option.name}
+                              </span>
+                              <span className="label-md shrink-0 text-right text-primary">
+                                {price ?? (isLoadingPrices ? '...' : '-')}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {hasError && (
+                          <p className="label-sm px-3 pb-1 text-negative">
+                            Please select delivery method
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                )}
+                );
+              })}
+
+              <Divider />
+              <div className="p-4">
+                {error && <p className="label-sm mb-2 text-negative">{error}</p>}
+                <Button
+                  className="w-full"
+                  variant="filled"
+                  onClick={handleSubmit}
+                  disabled={isPending || isLoadingPrices}
+                  loading={isPending}
+                  data-testid="submit-delivery-button"
+                >
+                  PROCEED TO PAYMENT
+                </Button>
               </div>
-            </div>
-          </div>
-          <div>
-            <ErrorMessage
-              error={error}
-              data-testid="delivery-option-error-message"
-            />
-            <Button
-              onClick={handleSubmit}
-              variant="filled"
-              disabled={!cart.shipping_methods?.[0] || isPendingDeleteRow}
-              loading={isLoadingPrices}
-            >
-              Continue to payment
-            </Button>
-          </div>
+            </>
+          )}
         </div>
       ) : (
-        (cart.shipping_methods?.length ?? 0) > 0 && (
-          <div className="border-t border-primary p-4">
-            <div className="text-small-regular flex flex-col">
-              {cart.shipping_methods?.map(method => (
-                <div
-                  key={method.id}
-                  className="mb-4 rounded-md border p-4"
-                >
-                  <p className="label-md mb-1 font-bold">Method</p>
-                  <p className="label-md text-secondary">
-                    {method.name}{' '}
-                    {convertToLocale({
-                      amount: method.amount!,
-                      currency_code: cart?.currency_code
-                    })}
-                  </p>
+        /* Collapsed / summary state */
+        isDeliveryCompleted && (
+          <div className="border-t border-primary">
+            {(cart.shipping_methods ?? []).map((cartMethod, parcelIndex) => {
+              const matchedOption = (shippingOptions ?? []).find(
+                opt => opt.id === cartMethod.shipping_option_id
+              );
+              const sellerName = matchedOption?.seller_name;
+
+              return (
+                <div key={cartMethod.id}>
+                  {parcelIndex > 0 && <Divider />}
+                  <div className="p-2">
+                    <div className="flex items-start justify-between p-3">
+                      <span className="heading-sm text-primary">Parcel {parcelIndex + 1}</span>
+                      {sellerName && (
+                        <div className="label-md flex items-center gap-1">
+                          <span className="text-secondary">Seller:</span>
+                          <span className="text-primary">{sellerName}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="rounded-sm p-3">
+                      <p className="label-md text-primary">Delivery method</p>
+                      <p className="label-md text-secondary">
+                        {cartMethod.name}
+                        {cartMethod.amount != null &&
+                          `, ${convertToLocale({ amount: cartMethod.amount, currency_code: cart.currency_code })}`}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )
       )}

@@ -16,7 +16,6 @@ import { isStripe as isStripeFunc, paymentInfoMap } from '../../../lib/constants
 import PaymentContainer, {
   StripeCardContainer
 } from '../../organisms/PaymentContainer/PaymentContainer';
-import PaymentButton from '../CartReview/PaymentButton';
 
 type StoreCardPaymentMethod = any & {
   service_zone?: {
@@ -37,10 +36,10 @@ const CartPaymentSection = ({
     (paymentSession: any) => paymentSession.status === 'pending'
   );
 
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState(false);
   const [cardBrand, setCardBrand] = useState<string | null>(null);
-  const [cardComplete, setCardComplete] = useState(false);
+  const [, setCardComplete] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? ''
   );
@@ -51,15 +50,16 @@ const CartPaymentSection = ({
 
   const isOpen = searchParams.get('step') === 'payment';
 
-  const isStripe = isStripeFunc(selectedPaymentMethod);
-
   const setPaymentMethod = async (method: string) => {
     setError(null);
+    setSelectionError(false);
     setSelectedPaymentMethod(method);
-    if (isStripeFunc(method)) {
+    try {
       await initiatePaymentSession(cart, {
         provider_id: method
       });
+    } catch (err: any) {
+      setError(err.message);
     }
   };
 
@@ -83,24 +83,9 @@ const CartPaymentSection = ({
     });
   };
 
-  const handleInitiatePayment = async () => {
-    setIsLoading(true);
-    try {
-      const checkActiveSession = activeSession?.provider_id === selectedPaymentMethod;
-      if (!checkActiveSession) {
-        await initiatePaymentSession(cart, {
-          provider_id: selectedPaymentMethod
-        });
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     setError(null);
+    setSelectionError(false);
   }, [isOpen]);
 
   const isEditEnabled = !isOpen && !!cart?.payment_collection?.payment_sessions?.length;
@@ -132,37 +117,44 @@ const CartPaymentSection = ({
         )}
       </div>
       {isOpen && (
-        <div className="border-t border-primary p-4">
+        <div className="border-t border-primary p-2">
           {!paidByGiftcard && availablePaymentMethods?.length && (
-            <RadioGroup
-              value={selectedPaymentMethod}
-              onChange={(value: string) => setPaymentMethod(value)}
-            >
-              {availablePaymentMethods.map(paymentMethod => (
-                <div key={paymentMethod.id}>
-                  {isStripeFunc(paymentMethod.id) ? (
-                    <StripeCardContainer
-                      paymentProviderId={paymentMethod.id}
-                      selectedPaymentOptionId={selectedPaymentMethod}
-                      paymentInfoMap={paymentInfoMap}
-                      setCardBrand={setCardBrand}
-                      setError={setError}
-                      setCardComplete={setCardComplete}
-                    />
-                  ) : (
-                    <PaymentContainer
-                      paymentInfoMap={paymentInfoMap}
-                      paymentProviderId={paymentMethod.id}
-                      selectedPaymentOptionId={selectedPaymentMethod}
-                    />
-                  )}
-                </div>
-              ))}
-            </RadioGroup>
+            <>
+              <RadioGroup
+                value={selectedPaymentMethod}
+                onChange={(value: string) => setPaymentMethod(value)}
+              >
+                {availablePaymentMethods.map(paymentMethod => (
+                  <div key={paymentMethod.id}>
+                    {isStripeFunc(paymentMethod.id) ? (
+                      <StripeCardContainer
+                        paymentProviderId={paymentMethod.id}
+                        selectedPaymentOptionId={selectedPaymentMethod}
+                        paymentInfoMap={paymentInfoMap}
+                        hasValidationError={selectionError}
+                        setCardBrand={setCardBrand}
+                        setError={setError}
+                        setCardComplete={setCardComplete}
+                      />
+                    ) : (
+                      <PaymentContainer
+                        paymentInfoMap={paymentInfoMap}
+                        paymentProviderId={paymentMethod.id}
+                        selectedPaymentOptionId={selectedPaymentMethod}
+                        hasValidationError={selectionError}
+                      />
+                    )}
+                  </div>
+                ))}
+              </RadioGroup>
+              {selectionError && (
+                <p className="label-sm mt-1 px-1 text-negative">Please select a payment method</p>
+              )}
+            </>
           )}
 
           {paidByGiftcard && (
-            <div className="flex w-1/3 flex-col">
+            <div className="flex w-1/3 flex-col p-2">
               <Text className="txt-medium-plus text-ui-fg-base mb-1">Payment method</Text>
               <Text
                 className="txt-medium text-ui-fg-subtle"
@@ -177,22 +169,6 @@ const CartPaymentSection = ({
             error={error}
             data-testid="payment-method-error-message"
           />
-
-          {!activeSession && isStripeFunc(selectedPaymentMethod) ? (
-            <Button
-              onClick={handleInitiatePayment}
-              variant="tonal"
-              loading={isLoading}
-              disabled={!selectedPaymentMethod}
-            >
-              Enter card details
-            </Button>
-          ) : (
-            <PaymentButton
-              cart={cart}
-              data-testid="submit-order-button"
-            />
-          )}
         </div>
       )}
 

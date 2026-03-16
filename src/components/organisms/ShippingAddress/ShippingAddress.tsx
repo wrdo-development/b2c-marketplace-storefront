@@ -12,7 +12,7 @@ import { HttpTypes } from '@medusajs/types';
 import { usePathname, useRouter } from 'next/navigation';
 import { z } from 'zod';
 
-import { Button, Checkbox, Divider, Input } from '@/components/atoms';
+import { Button, Checkbox, Divider, Input, Radio } from '@/components/atoms';
 import CountrySelect from '@/components/cells/CountrySelect/CountrySelect';
 import { AddressForm, Modal } from '@/components/molecules';
 import { AddressFormData } from '@/components/molecules/AddressForm/schema';
@@ -59,21 +59,6 @@ type AddressCardProps = {
   onDelete: () => void;
 };
 
-function RadioIndicator({ selected }: { selected: boolean }) {
-  return (
-    <div className="flex shrink-0 items-center justify-center p-[10px]">
-      <div
-        className={cn(
-          'flex size-5 items-center justify-center rounded-full',
-          selected ? 'border border-action' : 'border border-secondary bg-component-secondary'
-        )}
-      >
-        {selected && <div className="size-3 rounded-full bg-action" />}
-      </div>
-    </div>
-  );
-}
-
 function AddressCard({
   address,
   customerEmail,
@@ -105,7 +90,7 @@ function AddressCard({
       )}
       onClick={onSelect}
     >
-      <RadioIndicator selected={selected} />
+      <Radio selected={selected} />
       <div className="label-md min-w-0 flex-1 font-medium text-primary">
         {address.first_name} {address.last_name}
       </div>

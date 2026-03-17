@@ -136,6 +136,7 @@ export const CartAddressSection = ({
                 data-testid="submit-address-button"
                 variant="filled"
                 disabled={isPending}
+                loading={isPending}
               >
                 {isEditOpen ? 'SAVE' : 'PROCEED TO DELIVERY'}
               </Button>

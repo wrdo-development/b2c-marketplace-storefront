@@ -9,6 +9,7 @@ import { Button, Divider, Radio } from '@/components/atoms';
 import { TickThinIcon } from '@/icons';
 import { removeShippingMethod, setShippingMethod } from '@/lib/data/cart';
 import { calculatePriceForShippingOption } from '@/lib/data/fulfillment';
+import { FLEEK_KEY, FLEEK_NAME } from '@/lib/helpers/group-cart-items-by-seller';
 import { convertToLocale } from '@/lib/helpers/money';
 
 type ExtendedStoreProduct = HttpTypes.StoreProduct & {
@@ -34,8 +35,9 @@ export type StoreCardShippingMethod = HttpTypes.StoreCartShippingOption & {
 
 type ShippingOption = StoreCardShippingMethod & {
   rules: any;
-  seller_id: string;
+  seller_id: string | null;
   seller_name?: string;
+  is_admin_option?: boolean;
   price_type: string;
   id: string;
   amount?: number;
@@ -63,6 +65,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
   const pathname = usePathname();
 
   const isOpen = searchParams.get('step') === 'delivery';
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const shippingOptions = useMemo(
     () =>
@@ -75,7 +78,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
   const groupedBySeller = useMemo(
     () =>
       (shippingOptions ?? []).reduce<Record<string, ShippingOption[]>>((acc, method) => {
-        const sellerId = method.seller_id;
+        const sellerId = method.is_admin_option ? FLEEK_KEY : method.seller_id;
         if (!sellerId) return acc;
         if (!acc[sellerId]) acc[sellerId] = [];
         acc[sellerId]!.push(method);
@@ -84,14 +87,14 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
     [shippingOptions]
   );
 
-  const sellerIds = useMemo(
-    () => Object.keys(groupedBySeller).filter(id => groupedBySeller[id]?.[0]?.seller_name),
-    [groupedBySeller]
-  );
+  const sellerIds = useMemo(() => Object.keys(groupedBySeller), [groupedBySeller]);
 
   // Pre-fill selections from cart's existing shipping methods
   useEffect(() => {
-    if (!cart.shipping_methods?.length) return;
+    if (!cart.shipping_methods?.length) {
+      setSelectedMethodsBySeller({});
+      return;
+    }
     const preSelected: Record<string, string> = {};
     for (const sellerId of sellerIds) {
       const options = groupedBySeller[sellerId] ?? [];
@@ -179,6 +182,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
       if (cart.shipping_methods?.length) {
         await Promise.all(cart.shipping_methods.map(sm => removeShippingMethod(sm.id)));
       }
+      setIsEditOpen(true);
       router.replace(pathname + '?step=delivery');
       router.refresh();
     });
@@ -223,7 +227,8 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
             <>
               {sellerIds.map((sellerId, parcelIndex) => {
                 const options = groupedBySeller[sellerId] ?? [];
-                const sellerName = options[0]?.seller_name ?? '';
+                const sellerName =
+                  options[0]?.seller_name ?? (sellerId === FLEEK_KEY ? FLEEK_NAME : '');
                 const items = getItemsForSeller(sellerId);
                 const selectedOptionId = selectedMethodsBySeller[sellerId];
                 const hasError = showValidation && !selectedOptionId;
@@ -256,10 +261,12 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                             )}
                           </div>
                         )}
-                        <div className="label-md flex w-[200px] shrink-0 items-center justify-end gap-1">
-                          <span className="text-secondary">Seller:</span>
-                          <span className="text-primary">{sellerName}</span>
-                        </div>
+                        {sellerName && (
+                          <div className="label-md flex w-[200px] shrink-0 items-center justify-end gap-1">
+                            <span className="text-secondary">Seller:</span>
+                            <span className="text-primary">{sellerName}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Shipping options */}
@@ -310,7 +317,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                   loading={isPending}
                   data-testid="submit-delivery-button"
                 >
-                  PROCEED TO PAYMENT
+                  {isEditOpen ? 'SAVE' : 'PROCEED TO PAYMENT'}
                 </Button>
               </div>
             </>

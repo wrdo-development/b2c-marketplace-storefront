@@ -1,51 +1,52 @@
-import { HttpTypes } from "@medusajs/types"
+import { HttpTypes } from '@medusajs/types';
 
-const FLEEK_KEY = "fleek"
+export const FLEEK_KEY = 'fleek';
+export const FLEEK_NAME = 'FLEEK';
 
 export type GroupedCartBySeller = Record<
   string,
   { seller: any; items: HttpTypes.StoreCartLineItem[] }
->
+>;
 
 export function groupItemsBySeller(cart: HttpTypes.StoreCart): GroupedCartBySeller {
-  const groupedBySeller: GroupedCartBySeller = {}
+  const groupedBySeller: GroupedCartBySeller = {};
 
   const getOrCreateFleekSection = () => {
     if (!groupedBySeller[FLEEK_KEY]) {
       groupedBySeller[FLEEK_KEY] = {
         seller: {
-          name: "FLEEK",
+          name: 'FLEEK',
           id: FLEEK_KEY,
-          photo: "/Logo.svg",
-          created_at: new Date(),
+          photo: '/Logo.svg',
+          created_at: new Date()
         },
-        items: [],
-      }
+        items: []
+      };
     }
-    return groupedBySeller[FLEEK_KEY]
-  }
+    return groupedBySeller[FLEEK_KEY];
+  };
 
   cart.items?.forEach((item: any) => {
-    const isAdminManaged = item.variant_managed_by === "admin"
-    const seller = item.product?.seller
+    const isAdminManaged = item.variant_managed_by === 'admin';
+    const seller = item.product?.seller;
 
     if (isAdminManaged) {
-      getOrCreateFleekSection().items.push(item)
-      return
+      getOrCreateFleekSection().items.push(item);
+      return;
     }
 
     if (seller) {
       if (!groupedBySeller[seller.id]) {
         groupedBySeller[seller.id] = {
           seller: seller,
-          items: [],
-        }
+          items: []
+        };
       }
-      groupedBySeller[seller.id].items.push(item)
+      groupedBySeller[seller.id].items.push(item);
     } else {
-      getOrCreateFleekSection().items.push(item)
+      getOrCreateFleekSection().items.push(item);
     }
-  })
+  });
 
-  return groupedBySeller
+  return groupedBySeller;
 }

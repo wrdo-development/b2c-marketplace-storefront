@@ -147,14 +147,6 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
 
   const hasShipping = (cart.shipping_methods?.length ?? 0) > 0;
 
-  const isAddressComplete = Boolean(cart.shipping_address?.id);
-
-  useEffect(() => {
-    if (isAddressComplete && !hasShipping && !isOpen && !isEditOpen) {
-      router.replace(pathname + '?step=delivery');
-    }
-  }, [isAddressComplete, hasShipping, isOpen, isEditOpen, router, pathname]);
-
   useEffect(() => {
     setError(null);
     setShowValidation(false);
@@ -198,7 +190,12 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
             return;
           }
         }
-        router.push(pathname + '?step=payment', { scroll: false });
+        if (isEditOpen) {
+          setIsEditOpen(false);
+          router.replace(pathname);
+        } else {
+          router.push(pathname + '?step=payment', { scroll: false });
+        }
         router.refresh();
       } catch (err: any) {
         setError(

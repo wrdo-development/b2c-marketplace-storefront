@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { HttpTypes } from '@medusajs/types';
 import { useToggleState } from '@medusajs/ui';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Button, Divider } from '@/components/atoms';
 import ErrorMessage from '@/components/molecules/ErrorMessage/ErrorMessage';
@@ -15,14 +15,7 @@ import { TickThinIcon } from '@/icons';
 import Spinner from '@/icons/spinner';
 import { setAddresses } from '@/lib/data/cart';
 import compareAddresses from '@/lib/helpers/compare-addresses';
-
-const isAddressPopulated = address => {
-  if (!address || typeof address !== 'object') return false;
-
-  const requiredFields = ['first_name', 'last_name', 'address_1', 'city'];
-
-  return requiredFields.some(field => address[field] !== null && address[field]?.trim() !== '');
-};
+import isAddressComplete from '@/lib/helpers/is-address-complete';
 
 export const CartAddressSection = ({
   cart,
@@ -33,19 +26,12 @@ export const CartAddressSection = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const isAddress = Boolean(
-    cart?.shipping_address &&
-    cart?.shipping_address.first_name &&
-    cart?.shipping_address.last_name &&
-    cart?.shipping_address.address_1 &&
-    cart?.shipping_address.city &&
-    cart?.shipping_address.postal_code &&
-    cart?.shipping_address.country_code
-  );
+  const isAddress = isAddressComplete(cart?.shipping_address);
 
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const isOpen = !isAddress || isEditOpen;
+  const isEditMode = isAddress && searchParams.get('step') === 'address';
+  const isOpen = !isAddress || searchParams.get('step') === 'address';
 
   const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
     !cart?.billing_address || compareAddresses(cart.shipping_address, cart.billing_address)
@@ -66,8 +52,8 @@ export const CartAddressSection = ({
       setError(result);
       return;
     }
-    if (isEditOpen) {
-      setIsEditOpen(false);
+    if (isEditMode) {
+      router.replace(pathname);
       router.refresh();
     } else {
       router.replace(`${pathname}?step=delivery`);
@@ -75,14 +61,8 @@ export const CartAddressSection = ({
     }
   };
 
-  useEffect(() => {
-    if (!isAddress) {
-      router.replace(pathname + '?step=address');
-    }
-  }, [isAddress]);
-
   const handleEdit = () => {
-    setIsEditOpen(true);
+    router.replace(pathname + '?step=address');
   };
 
   return (
@@ -138,7 +118,7 @@ export const CartAddressSection = ({
                 disabled={isPending}
                 loading={isPending}
               >
-                {isEditOpen ? 'SAVE' : 'PROCEED TO DELIVERY'}
+                {isEditMode ? 'SAVE' : 'PROCEED TO DELIVERY'}
               </Button>
               <ErrorMessage
                 error={error}
@@ -165,7 +145,7 @@ export const CartAddressSection = ({
                     {!cart.billing_address ||
                     compareAddresses(cart.shipping_address, cart.billing_address)
                       ? 'Same as shipping address'
-                      : isAddressPopulated(cart.billing_address)
+                      : cart.billing_address?.first_name
                         ? `${cart.billing_address.first_name} ${cart.billing_address.last_name}, ${cart.billing_address.address_1}, ${cart.billing_address.postal_code} ${cart.billing_address.city}, ${cart.billing_address.country_code?.toUpperCase()}`
                         : ''}
                   </p>

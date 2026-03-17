@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 import { CartSummary } from '@/components/organisms';
 import { PromoCode } from '@/components/organisms/PromoCode/PromoCode';
 
@@ -35,26 +37,26 @@ const Review = ({ cart }: { cart: any }) => {
         <p className="label-sm mt-3 text-center font-light text-secondary">
           By clicking the Place order button, you confirm that you have read, understand and accept
           our{' '}
-          <a
+          <Link
             href="/terms-of-use"
             className="underline"
           >
             Terms of Use
-          </a>
+          </Link>
           ,{' '}
-          <a
+          <Link
             href="/terms-of-sale"
             className="underline"
           >
             Terms of Sale
-          </a>{' '}
+          </Link>{' '}
           and{' '}
-          <a
+          <Link
             href="/returns-policy"
             className="underline"
           >
             Returns Policy.
-          </a>
+          </Link>
         </p>
       </div>
     </div>

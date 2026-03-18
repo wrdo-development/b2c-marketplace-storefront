@@ -21,6 +21,7 @@ type ExtendedStoreProduct = HttpTypes.StoreProduct & {
 
 type CartItem = HttpTypes.StoreCartLineItem & {
   product?: ExtendedStoreProduct;
+  variant_managed_by?: string;
 };
 
 export type StoreCardShippingMethod = HttpTypes.StoreCartShippingOption & {
@@ -90,7 +91,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
   const hasAdminItems = useMemo(
     () =>
       (cart.items ?? []).some(
-        (item: any) => item.variant_managed_by === 'admin' || !item.product?.seller
+        item => item.variant_managed_by === 'admin' || !item.product?.seller
       ),
     [cart.items]
   );
@@ -99,9 +100,11 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
     () =>
       Object.keys(groupedBySeller).filter(sellerId => {
         if (sellerId === FLEEK_KEY) return hasAdminItems;
-        return true;
+        return (cart.items ?? []).some(
+          item => item.product?.seller?.id === sellerId && item.variant_managed_by !== 'admin'
+        );
       }),
-    [groupedBySeller, hasAdminItems]
+    [groupedBySeller, hasAdminItems, cart.items]
   );
 
   // Pre-fill selections from cart's existing shipping methods
@@ -161,10 +164,12 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
   const getItemsForSeller = (sellerId: string): CartItem[] => {
     if (sellerId === FLEEK_KEY) {
       return (cart.items ?? []).filter(
-        (item: any) => item.variant_managed_by === 'admin' || !item.product?.seller
+        item => item.variant_managed_by === 'admin' || !item.product?.seller
       );
     }
-    return (cart.items ?? []).filter(item => item.product?.seller?.id === sellerId);
+    return (cart.items ?? []).filter(
+      item => item.product?.seller?.id === sellerId && item.variant_managed_by !== 'admin'
+    );
   };
 
   const handleSelectMethod = (sellerId: string, optionId: string) => {

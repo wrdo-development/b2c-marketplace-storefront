@@ -265,12 +265,18 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                     {parcelIndex > 0 && <Divider />}
                     <div className="p-2">
                       {/* Parcel heading row */}
-                      <div className="flex items-start gap-20 p-3">
-                        <span className="heading-sm min-w-0 flex-1 text-primary">
+                      <div className="flex flex-wrap items-center justify-between p-3 lg:flex-nowrap lg:items-start">
+                        <span className="heading-sm min-w-0 flex-1 text-primary order-1">
                           Parcel {parcelIndex + 1}
                         </span>
+                        {sellerName && (
+                          <div className="label-md flex shrink-0 items-center gap-1 order-2 lg:order-3">
+                            <span className="text-secondary">Seller:</span>
+                            <span className="text-primary">{sellerName}</span>
+                          </div>
+                        )}
                         {items.length > 0 && (
-                          <div className="flex shrink-0 gap-2">
+                          <div className="flex w-full shrink-0 gap-2 order-3 lg:order-2 lg:w-auto">
                             {items.map(
                               item =>
                                 item.thumbnail && (
@@ -286,12 +292,6 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                                   </div>
                                 )
                             )}
-                          </div>
-                        )}
-                        {sellerName && (
-                          <div className="label-md flex w-[200px] shrink-0 items-center justify-end gap-1">
-                            <span className="text-secondary">Seller:</span>
-                            <span className="text-primary">{sellerName}</span>
                           </div>
                         )}
                       </div>

@@ -66,10 +66,10 @@ async function CheckoutPageContent({ searchParams }: { searchParams: Promise<{ s
   return (
     <PaymentWrapper cart={cart}>
       <main
-        className="container p-5"
+        className="container p-4 lg:p-5"
         data-testid="checkout-page"
       >
-        <div className="grid gap-8 lg:grid-cols-11">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-11">
           <div
             className="flex flex-col gap-6 lg:col-span-6"
             data-testid="checkout-steps-container"

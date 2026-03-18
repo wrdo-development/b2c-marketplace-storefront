@@ -85,24 +85,26 @@ function AddressCard({
   return (
     <div
       className={cn(
-        'flex cursor-pointer items-center gap-5 rounded-lg border px-4 py-5',
+        'flex cursor-pointer items-start gap-4 rounded-lg border p-4 lg:items-center lg:gap-5 lg:px-4 lg:py-5',
         selected ? 'border-secondary' : 'border-primary'
       )}
       onClick={onSelect}
     >
       <Radio selected={selected} />
-      <div className="label-md min-w-0 flex-1 font-medium text-primary">
-        {address.first_name} {address.last_name}
-      </div>
-      <div className="label-md min-w-0 flex-1 text-secondary">
-        <p>{address.address_1}</p>
-        <p>
-          {address.postal_code}, {address.city}, {address.country_code?.toUpperCase()}
-        </p>
-      </div>
-      <div className="label-md min-w-0 flex-1 overflow-hidden text-secondary">
-        <p className="truncate">{customerEmail}</p>
-        <p>{address.phone}</p>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 lg:flex-row lg:items-center lg:gap-5">
+        <div className="label-md min-w-0 font-medium text-primary lg:flex-1">
+          {address.first_name} {address.last_name}
+        </div>
+        <div className="label-md min-w-0 text-secondary lg:flex-1">
+          <p>{address.address_1}</p>
+          <p>
+            {address.postal_code}, {address.city}, {address.country_code?.toUpperCase()}
+          </p>
+        </div>
+        <div className="label-md min-w-0 overflow-hidden text-secondary lg:flex-1">
+          <p className="lg:truncate">{customerEmail}</p>
+          <p>{address.phone}</p>
+        </div>
       </div>
       <div
         className="relative shrink-0"
@@ -685,7 +687,7 @@ const ShippingAddress = forwardRef<
     return (
       <>
         {/* Header row */}
-        <div className="flex items-center justify-between pb-4">
+        <div className="flex flex-col items-start gap-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
           <p className="heading-sm text-primary">
             {showAddForm ? 'Add new address' : 'Select your address'}
           </p>

@@ -12,7 +12,29 @@ export default async function RootLayout({
   return (
     <>
       <header className="border-b border-primary">
-        <div className="relative flex w-full items-center px-4 py-4 lg:px-8">
+        {/* Mobile header */}
+        <div className="flex items-center justify-between px-4 py-4 lg:hidden">
+          <LocalizedClientLink href="/">
+            <Image
+              src="/Logo.svg"
+              width={102}
+              height={32}
+              alt="Logo"
+              priority
+            />
+          </LocalizedClientLink>
+          <LocalizedClientLink href="/cart">
+            <Button
+              variant="tonal"
+              className="flex items-center gap-2"
+            >
+              <CollapseIcon className="rotate-90" />
+              <span>BACK TO CART</span>
+            </Button>
+          </LocalizedClientLink>
+        </div>
+        {/* Desktop header */}
+        <div className="relative hidden w-full items-center px-8 py-4 lg:flex">
           <LocalizedClientLink href="/cart">
             <Button
               variant="tonal"

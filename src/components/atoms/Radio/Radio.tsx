@@ -8,8 +8,12 @@ type RadioIndicatorProps = {
 
 export const Radio = ({ selected, hasError, 'data-testid': dataTestId }: RadioIndicatorProps) => {
   return (
-    <div
-      className="flex shrink-0 items-center justify-center p-[10px]"
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      data-state={selected ? 'checked' : 'unchecked'}
+      className="flex shrink-0 items-center justify-center p-[10px] outline-none"
       data-testid={dataTestId}
     >
       <div
@@ -24,6 +28,6 @@ export const Radio = ({ selected, hasError, 'data-testid': dataTestId }: RadioIn
       >
         {selected && <div className="size-3 rounded-full bg-action" />}
       </div>
-    </div>
+    </button>
   );
 };

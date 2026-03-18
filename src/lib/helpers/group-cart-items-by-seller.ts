@@ -15,7 +15,7 @@ export function groupItemsBySeller(cart: HttpTypes.StoreCart): GroupedCartBySell
     if (!groupedBySeller[FLEEK_KEY]) {
       groupedBySeller[FLEEK_KEY] = {
         seller: {
-          name: 'FLEEK',
+          name: FLEEK_NAME,
           id: FLEEK_KEY,
           photo: '/Logo.svg',
           created_at: new Date()

@@ -7,6 +7,7 @@ import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedL
 import { UpdateCartItemButton } from '@/components/molecules/UpdateCartItemButton/UpdateCartItemButton';
 import { filterValidCartItems } from '@/lib/helpers/filter-valid-cart-items';
 import { convertToLocale } from '@/lib/helpers/money';
+import { cn } from '@/lib/utils';
 import { Wishlist } from '@/types/wishlist';
 
 export const CartItemsProducts = ({
@@ -59,23 +60,20 @@ export const CartItemsProducts = ({
                   className="h-[80px] w-[56px] shrink-0"
                   data-testid="cart-item-image"
                 >
-                  {product.thumbnail ? (
-                    <Image
-                      src={decodeURIComponent(product.thumbnail)}
-                      alt="Product thumbnail"
-                      width={56}
-                      height={80}
-                      className="h-[80px] w-[56px] rounded-[6px] object-cover"
-                    />
-                  ) : (
-                    <Image
-                      src={'/images/placeholder.svg'}
-                      alt="Product thumbnail"
-                      width={56}
-                      height={80}
-                      className="h-[80px] w-[56px] rounded-[6px] object-cover opacity-30"
-                    />
-                  )}
+                  <Image
+                    src={
+                      product.thumbnail
+                        ? decodeURIComponent(product.thumbnail)
+                        : '/images/placeholder.svg'
+                    }
+                    alt="Product thumbnail"
+                    width={56}
+                    height={80}
+                    className={cn(
+                      'h-[80px] w-[56px] rounded-[6px] object-cover',
+                      !product.thumbnail ? 'opacity-30' : ''
+                    )}
+                  />
                 </div>
               </LocalizedClientLink>
               <div className="flex min-w-0 flex-1 items-center justify-between">
@@ -174,13 +172,12 @@ export const CartItemsProducts = ({
                   />
                   {delete_item && <DeleteCartItemButton id={product.id} />}
                 </div>
-                {change_quantity && (
+                {change_quantity ? (
                   <UpdateCartItemButton
                     quantity={product.quantity}
                     lineItemId={product.id}
                   />
-                )}
-                {!change_quantity && (
+                ) : (
                   <p className="label-md text-secondary">
                     <span className="text-primary">{product.quantity}</span>
                   </p>

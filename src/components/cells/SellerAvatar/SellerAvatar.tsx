@@ -1,5 +1,7 @@
 import Image from 'next/image';
 
+import { cn } from '@/lib/utils';
+
 export const SellerAvatar = ({
   photo = '',
   size = 32,
@@ -17,14 +19,14 @@ export const SellerAvatar = ({
       alt={alt}
       width={size}
       height={size}
-      className={`shrink-0 ${className}`}
+      className={cn('shrink-0', className)}
       style={{ maxWidth: size, maxHeight: size }}
     />
   ) : (
     <Image
       src="/images/placeholder.svg"
       alt={alt}
-      className={`h-8 w-8 shrink-0 opacity-30 ${className}`}
+      className={cn('h-8 w-8 shrink-0 opacity-30', className)}
       width={32}
       height={32}
       style={{ maxWidth: 32, maxHeight: 32 }}

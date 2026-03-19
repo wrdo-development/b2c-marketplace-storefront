@@ -1,63 +1,56 @@
-import { Card, Checkbox } from "@/components/atoms"
+import { HttpTypes } from '@medusajs/types';
+
+import { Card, Checkbox } from '@/components/atoms';
+import { convertToLocale } from '@/lib/helpers/money';
 
 export const ReturnMethodsTab = ({
   shippingMethods,
   handleSetReturnMethod,
   returnMethod,
-  seller,
+  currency_code
 }: {
-  shippingMethods: any
-  handleSetReturnMethod: (method: any) => void
-  returnMethod: string
-  seller: any
+  shippingMethods: HttpTypes.StoreShippingOption[];
+  handleSetReturnMethod: (methodId: string) => void;
+  returnMethod: string;
+  currency_code: string;
 }) => {
-  const noShippingMethods = !shippingMethods?.length || false
+  const noShippingMethods = !shippingMethods?.length || false;
 
   return (
-    <>
-      <div className="mb-8">
-        <Card className="bg-secondary p-4">
-          <p className="label-lg uppercase">Return methods</p>
-        </Card>
-        <Card className="flex items-center justify-between p-4">
-          {noShippingMethods ? (
-            <div className="py-4 text-center font-bold heading-md w-full">
-              No shipping methods available
-            </div>
-          ) : (
-            <ul>
-              {shippingMethods.map((method: any) => (
-                <li
-                  key={method.id}
-                  onClick={() => handleSetReturnMethod(method.id)}
-                  className="flex items-center gap-4 my-2 cursor-pointer"
-                >
-                  <Checkbox checked={returnMethod === method.id} />
-                  <span className="label-lg">{method.name}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
-      <div>
-        <Card className="bg-secondary p-4">
-          <p className="label-lg uppercase">Shipping address</p>
-        </Card>
-        <Card className="p-4">
-          <p className="label-lg">{seller.name}</p>
-          <p className="label-md">{seller.address_line}</p>
-          <p className="label-md">
-            {seller.city}, {seller.state}
-          </p>
-          <p className="label-md">
-            {seller.postal_code}, {seller.country_code}
-          </p>
-          <p className="label-md">
-            {seller.email}, {seller.phone}
-          </p>
-        </Card>
-      </div>
-    </>
-  )
-}
+    <div className="mb-8">
+      <Card className="bg-secondary p-4">
+        <p className="heading-sm uppercase text-primary">Return method</p>
+      </Card>
+      <Card className="p-2">
+        {noShippingMethods ? (
+          <div className="heading-md w-full py-4 text-center font-bold">
+            No shipping methods available
+          </div>
+        ) : (
+          <ul className="w-full">
+            {shippingMethods.map(method => (
+              <li
+                key={method.id}
+                onClick={() => handleSetReturnMethod(method.id)}
+                className="flex cursor-pointer items-center gap-2 rounded-lg py-2 pl-1 pr-3"
+              >
+                <Checkbox checked={returnMethod === method.id} />
+                <div className="flex-1">
+                  <span className="label-md text-primary">{method.name}</span>
+                </div>
+                {method.amount != null && (
+                  <span className="label-md text-primary">
+                    {convertToLocale({
+                      amount: method.amount,
+                      currency_code
+                    })}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+};

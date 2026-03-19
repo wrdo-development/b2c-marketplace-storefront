@@ -1,92 +1,102 @@
-"use client"
+'use client';
 
-import { Button } from "@/components/atoms"
-import { UserNavigation } from "@/components/molecules"
-import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
-import { ArrowLeftIcon } from "@/icons"
-import { ReturnItemsTab } from "./ReturnItemsTab"
-import { useState } from "react"
-import { ReturnSummaryTab } from "./ReturnSummaryTab"
-import { ReturnMethodsTab } from "./ReturnMethodsTab"
-import { StepProgressBar } from "@/components/cells/StepProgressBar/StepProgressBar"
-import { createReturnRequest } from "@/lib/data/orders"
-import { useRouter } from "next/navigation"
+import { useState } from 'react';
+
+import { HttpTypes } from '@medusajs/types';
+import { useRouter } from 'next/navigation';
+
+import { Button } from '@/components/atoms';
+import { StepProgressBar } from '@/components/cells/StepProgressBar/StepProgressBar';
+import { UserNavigation } from '@/components/molecules';
+import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedLink';
+import { ArrowLeftIcon } from '@/icons';
+import { createReturnRequest } from '@/lib/data/orders';
+import { SellerProps } from '@/types/seller';
+
+import { ReturnItemsTab } from './ReturnItemsTab';
+import { ReturnMethodsTab } from './ReturnMethodsTab';
+import { ReturnSummaryTab } from './ReturnSummaryTab';
+import { SelectedReturnItem } from './types';
+
+type Order = HttpTypes.StoreOrder & {
+  seller: SellerProps;
+  order_set: { id: string };
+  delivered_at?: string;
+};
 
 export const OrderReturnSection = ({
   order,
   returnReasons,
-  shippingMethods,
+  shippingMethods
 }: {
-  order: any
-  returnReasons: any[]
-  shippingMethods: any[]
+  order: Order;
+  returnReasons: HttpTypes.StoreReturnReason[];
+  shippingMethods: HttpTypes.StoreShippingOption[];
 }) => {
-  const [tab, setTab] = useState(0)
-  const [selectedItems, setSelectedItems] = useState<any[]>([])
-  const [error, setError] = useState<boolean>(false)
-  const [returnMethod, setReturnMethod] = useState<any>(null)
-  const router = useRouter()
+  const [tab, setTab] = useState(0);
+  const [selectedItems, setSelectedItems] = useState<SelectedReturnItem[]>([]);
+  const [error, setError] = useState<boolean>(false);
+  const [returnMethod, setReturnMethod] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleTabChange = (tab: number) => {
-    const noReason = selectedItems.filter((item) => !item.reason_id)
+    const noReason = selectedItems.filter(item => !item.reason_id);
     if (!noReason.length) {
-      setTab(tab)
+      setTab(tab);
     } else {
-      setError(true)
+      setError(true);
     }
-  }
+  };
 
-  const handleSetReturnMethod = (method: any) => {
-    setReturnMethod(method)
-  }
+  const handleSetReturnMethod = (methodId: string) => {
+    setReturnMethod(methodId);
+  };
 
-  const handleSelectItem = (item: any, reason_id: string = "") => {
-    setError(false)
-    if (!reason_id && selectedItems.some((i) => i.line_item_id === item.id)) {
-      setSelectedItems(selectedItems.filter((i) => i.line_item_id !== item.id))
+  const handleSelectItem = (item: HttpTypes.StoreOrderLineItem, reason_id: string = '') => {
+    setError(false);
+    if (!reason_id && selectedItems.some(i => i.line_item_id === item.id)) {
+      setSelectedItems(selectedItems.filter(i => i.line_item_id !== item.id));
     } else {
-      const itemToChange = selectedItems.find((i) => i.line_item_id === item.id)
+      const itemToChange = selectedItems.find(i => i.line_item_id === item.id);
       if (itemToChange) {
         setSelectedItems(
-          selectedItems.map((i) =>
-            i.line_item_id === item.id ? { ...i, reason_id } : i
-          )
-        )
+          selectedItems.map(i => (i.line_item_id === item.id ? { ...i, reason_id } : i))
+        );
       } else {
         setSelectedItems([
           ...selectedItems,
-          { line_item_id: item.id, quantity: item.quantity, reason_id },
-        ])
+          { line_item_id: item.id, quantity: item.quantity, reason_id }
+        ]);
       }
     }
-  }
+  };
 
   const handleSubmit = async () => {
     const data = {
       order_id: order.id,
-      customer_note: "",
+      customer_note: '',
       shipping_option_id: returnMethod,
-      line_items: selectedItems,
-    }
+      line_items: selectedItems
+    };
 
-    const { order_return_request } = await createReturnRequest(data)
+    const { order_return_request } = await createReturnRequest(data);
 
     if (!order_return_request.id) {
-      return console.log("Error creating return request")
+      return console.log('Error creating return request');
     }
 
-    router.push(`/user/orders/${order_return_request.id}/request-success`)
-  }
+    router.push(`/user/orders/${order_return_request.id}/request-success`);
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 mt-6 gap-5 md:gap-8">
+    <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-4 md:gap-8">
       <UserNavigation />
-      <div className="md:col-span-3 mb-8 md:mb-0">
+      <div className="mb-8 md:col-span-3 md:mb-0">
         {tab === 0 ? (
           <LocalizedClientLink href={`/user/orders/${order.order_set.id}`}>
             <Button
               variant="tonal"
-              className="label-md text-action-on-secondary uppercase flex items-center gap-2"
+              className="label-md flex items-center gap-2 uppercase text-action-on-secondary"
             >
               <ArrowLeftIcon className="size-4" />
               Order details
@@ -95,18 +105,18 @@ export const OrderReturnSection = ({
         ) : (
           <Button
             variant="tonal"
-            className="label-md text-action-on-secondary uppercase flex items-center gap-2"
+            className="label-md flex items-center gap-2 uppercase text-action-on-secondary"
             onClick={() => setTab(0)}
           >
             <ArrowLeftIcon className="size-4" />
             Select items
           </Button>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-8 gap-4 mt-8">
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-8">
           <div className="col-span-4">
             <div className="mb-4">
               <StepProgressBar
-                steps={["SELECT ITEMS TO RETURN", "SELECT RETURN METHOD"]}
+                steps={['SELECT ITEMS TO RETURN', 'SELECT RETURN METHOD']}
                 currentStep={tab}
               />
             </div>
@@ -123,8 +133,8 @@ export const OrderReturnSection = ({
               <ReturnMethodsTab
                 shippingMethods={shippingMethods}
                 handleSetReturnMethod={handleSetReturnMethod}
-                returnMethod={returnMethod}
-                seller={order.seller}
+                returnMethod={returnMethod ?? ''}
+                currency_code={order.currency_code}
               />
             )}
           </div>
@@ -133,15 +143,16 @@ export const OrderReturnSection = ({
             <ReturnSummaryTab
               currency_code={order.currency_code}
               selectedItems={selectedItems}
-              items={order.items}
+              items={order.items ?? []}
               handleTabChange={handleTabChange}
               tab={tab}
               returnMethod={returnMethod}
               handleSubmit={handleSubmit}
+              shippingMethods={shippingMethods}
             />
           </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

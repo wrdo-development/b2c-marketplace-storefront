@@ -29,7 +29,7 @@ export const OrderParcels = async ({ orders }: { orders: any[] }) => {
         const label = deliveryDate ? 'Delivery date' : undefined;
         const dateDisplay = deliveryDate;
 
-        const cancelledItems = order.cancelled_items ?? order.items ?? [];
+        const canceledItems = order.canceled_items ?? [];
 
         return (
           <div
@@ -74,10 +74,10 @@ export const OrderParcels = async ({ orders }: { orders: any[] }) => {
                   />
                 </div>
               )}
-              {order.status !== 'canceled' && cancelledItems.length > 0 && (
+              {order.status !== 'canceled' && canceledItems.length > 0 && (
                 <div className="border-b p-4">
                   <OrderParcelItems
-                    items={cancelledItems}
+                    items={canceledItems}
                     currency_code={order.currency_code}
                     isCanceled={true}
                   />

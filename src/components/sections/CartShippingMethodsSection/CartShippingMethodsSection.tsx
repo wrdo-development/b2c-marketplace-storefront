@@ -90,9 +90,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
 
   const hasAdminItems = useMemo(
     () =>
-      (cart.items ?? []).some(
-        item => item.variant_managed_by === 'admin' || !item.product?.seller
-      ),
+      (cart.items ?? []).some(item => item.variant_managed_by === 'admin' || !item.product?.seller),
     [cart.items]
   );
 
@@ -170,6 +168,20 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
     );
   };
 
+  const resolveSellerIdForGroup = (
+    groupKey: string,
+    selectedOption: ShippingOption | undefined
+  ): string | null => {
+    if (selectedOption?.seller_id) return selectedOption.seller_id;
+    if (groupKey === FLEEK_KEY) {
+      return (
+        getItemsForSeller(FLEEK_KEY).find(item => item.product?.seller?.id)?.product?.seller?.id ??
+        null
+      );
+    }
+    return null;
+  };
+
   const handleSelectMethod = (sellerId: string, optionId: string) => {
     setSelectedMethodsBySeller(prev => ({ ...prev, [sellerId]: optionId }));
     setShowValidation(false);
@@ -187,7 +199,12 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
       try {
         for (const sellerId of sellerIds) {
           const optionId = selectedMethodsBySeller[sellerId]!;
-          const res = await setShippingMethod({ cartId: cart.id, shippingMethodId: optionId });
+          const selectedOption = (groupedBySeller[sellerId] ?? []).find(opt => opt.id === optionId);
+          const res = await setShippingMethod({
+            cartId: cart.id,
+            shippingMethodId: optionId,
+            sellerId: resolveSellerIdForGroup(sellerId, selectedOption)
+          });
           if (!res.ok) {
             setError(res.error?.message ?? 'An error occurred');
             return;
@@ -263,17 +280,17 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                     <div className="p-2">
                       {/* Parcel heading row */}
                       <div className="flex flex-wrap items-center justify-between p-3 lg:flex-nowrap lg:items-start">
-                        <span className="heading-sm min-w-0 flex-1 text-primary order-1">
+                        <span className="heading-sm order-1 min-w-0 flex-1 text-primary">
                           Parcel {parcelIndex + 1}
                         </span>
                         {sellerName && (
-                          <div className="label-md flex shrink-0 items-center gap-1 order-2 lg:order-3">
+                          <div className="label-md order-2 flex shrink-0 items-center gap-1 lg:order-3">
                             <span className="text-secondary">Seller:</span>
                             <span className="text-primary">{sellerName}</span>
                           </div>
                         )}
                         {items.length > 0 && (
-                          <div className="flex w-full shrink-0 gap-2 order-3 lg:order-2 lg:w-auto">
+                          <div className="order-3 flex w-full shrink-0 gap-2 lg:order-2 lg:w-auto">
                             {items.map(
                               item =>
                                 item.thumbnail && (

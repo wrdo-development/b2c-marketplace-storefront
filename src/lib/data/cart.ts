@@ -218,17 +218,24 @@ export async function deleteLineItem(lineId: string) {
 
 export async function setShippingMethod({
   cartId,
-  shippingMethodId
+  shippingMethodId,
+  sellerId
 }: {
   cartId: string;
   shippingMethodId: string;
+  sellerId?: string | null;
 }) {
   const headers = {
     ...(await getAuthHeaders())
   };
 
+  const body: Record<string, unknown> = { option_id: shippingMethodId };
+  if (sellerId) {
+    body.data = { seller_id: sellerId };
+  }
+
   const res = await fetchQuery(`/store/carts/${cartId}/shipping-methods`, {
-    body: { option_id: shippingMethodId },
+    body,
     method: 'POST',
     headers
   });

@@ -6,9 +6,9 @@ import { Button } from '@/components/atoms';
 
 export const OrderReturn = ({ order }: { order: any }) => {
   return (
-    <div className="items-center justify-between md:flex">
-      <div className="mb-4 md:mb-0">
-        <h2 className="label-lg uppercase text-primary">Return Order</h2>
+    <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pr-8 max-md:pr-0">
+        <h2 className="heading-xs uppercase text-primary">Return Order</h2>
         <p className="label-md max-w-sm text-secondary">
           Once you receive your order, you will have [14] days to return items. Find out more about{' '}
           <Link

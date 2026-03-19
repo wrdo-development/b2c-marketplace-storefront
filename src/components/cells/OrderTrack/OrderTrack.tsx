@@ -1,14 +1,20 @@
 'use client';
 
+import { HttpTypes } from '@medusajs/types';
+
 import { Button } from '@/components/atoms';
 
-const getFirstLabel = (order: any) => order?.fulfillments?.[0]?.labels?.[0];
+import { hasTrackingData } from './orderTrack.helpers';
 
-export const OrderTrack = ({ order }: { order: any }) => {
+const getFirstLabel = (order: HttpTypes.StoreOrder) => order?.fulfillments?.[0]?.labels?.[0];
+
+export const OrderTrack = ({ order }: { order: HttpTypes.StoreOrder }) => {
   const label = getFirstLabel(order);
   const carrier = order.shipping_methods?.[0]?.name;
   const trackingNumber = label?.tracking_number;
   const trackingUrl = label?.tracking_url;
+
+  if (!hasTrackingData(order)) return null;
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4">

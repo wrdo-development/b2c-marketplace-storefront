@@ -8,14 +8,6 @@ const hasCancellableItems = (order: HttpTypes.StoreOrder) =>
   (order.items ?? []).some(item => item.quantity - (item.detail?.fulfilled_quantity ?? 0) > 0);
 
 export const OrderParcelActions = ({ order }: { order: HttpTypes.StoreOrder }) => {
-  if (order.status === 'pending') {
-    if (!hasCancellableItems(order)) return null;
-    return (
-      <div className="p-4">
-        <OrderCancel order={order} />
-      </div>
-    );
-  }
   if (order.fulfillment_status === 'delivered') {
     return (
       <div className="p-4">
@@ -31,6 +23,15 @@ export const OrderParcelActions = ({ order }: { order: HttpTypes.StoreOrder }) =
         <OrderTrack order={order} />
       </div>
     );
+
+  if (order.status === 'pending') {
+    if (!hasCancellableItems(order)) return null;
+    return (
+      <div className="p-4">
+        <OrderCancel order={order} />
+      </div>
+    );
+  }
 
   return null;
 };

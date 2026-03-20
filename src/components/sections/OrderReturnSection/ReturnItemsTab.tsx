@@ -1,77 +1,89 @@
-import { Card, Checkbox } from "@/components/atoms"
-import { convertToLocale } from "@/lib/helpers/money"
-import {
-  Listbox,
-  ListboxButton,
-  ListboxOption,
-  ListboxOptions,
-} from "@headlessui/react"
-import { clx } from "@medusajs/ui"
-import { ChevronUpDown } from "@medusajs/icons"
+import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from '@headlessui/react';
+import { ChevronUpDown } from '@medusajs/icons';
+import { HttpTypes } from '@medusajs/types';
+import { clx } from '@medusajs/ui';
+import Image from 'next/image';
 
-import Image from "next/image"
-import { cn } from "@/lib/utils"
+import { Card, Checkbox } from '@/components/atoms';
+import { convertToLocale } from '@/lib/helpers/money';
+import { cn } from '@/lib/utils';
+import { SellerProps } from '@/types/seller';
+
+import { SelectedReturnItem } from './types';
+
+type Order = HttpTypes.StoreOrder & {
+  seller: SellerProps;
+  delivered_at?: string;
+};
 
 export const ReturnItemsTab = ({
   order,
   selectedItems,
   handleSelectItem,
   returnReasons,
-  error,
+  error
 }: {
-  order: any
-  selectedItems: any[]
-  handleSelectItem: (item: any, reason_id: string) => void
-  returnReasons: any[]
-  error: boolean
+  order: Order;
+  selectedItems: SelectedReturnItem[];
+  handleSelectItem: (item: HttpTypes.StoreOrderLineItem, reason_id: string) => void;
+  returnReasons: HttpTypes.StoreReturnReason[];
+  error: boolean;
 }) => {
   return (
     <div>
-      <Card className="bg-secondary p-4">
+      <Card className="flex justify-between bg-secondary p-4">
         <p className="label-md">
-          Seller: <span className="font-semibold">{order.seller.name}</span>
+          <span className="text-secondary">Seller: </span>
+          <span className="text-primary">{order.seller.name}</span>
         </p>
+        {order.fulfillments?.[0]?.delivered_at && (
+          <p className="label-md">
+            <span className="text-secondary">Delivery date: </span>
+            <span className="text-primary">
+              {new Date(order.fulfillments[0].delivered_at).toLocaleDateString()}
+            </span>
+          </p>
+        )}
       </Card>
-      <Card className="flex items-center justify-between p-4">
+      <Card className="p-4">
         <ul className="w-full">
-          {order.items.map((item: any) => (
-            <li key={item.id} className="md:flex justify-between gap-2 w-full">
-              <div className="flex items-center gap-2 md:w-2/3 mb-4 md:mb-0">
+          {order.items?.map(item => (
+            <li
+              key={item.id}
+              className="w-full justify-between gap-2 md:flex"
+            >
+              <div className="mb-4 flex items-center gap-2 md:mb-0 md:w-2/3">
                 <Checkbox
-                  checked={selectedItems.some(
-                    (i) => i.line_item_id === item.id
-                  )}
-                  onChange={() => handleSelectItem(item, "")}
+                  checked={selectedItems.some(i => i.line_item_id === item.id)}
+                  onChange={() => handleSelectItem(item, '')}
                 />
                 <div className="flex items-center gap-2">
-                  <div className="w-16 rounded-sm border">
+                  <div className="h-20 w-14 flex-shrink-0 overflow-hidden rounded-sm">
                     {item.thumbnail ? (
                       <Image
                         src={item.thumbnail}
-                        alt={item.subtitle}
-                        width={64}
-                        height={64}
-                        className="rounded-sm"
+                        alt={item.subtitle ?? ''}
+                        width={56}
+                        height={80}
+                        className="h-full w-full rounded-sm object-cover"
                       />
                     ) : (
                       <Image
-                        src={"/images/placeholder.svg"}
-                        alt={item.subtitle}
-                        width={64}
-                        height={64}
-                        className="opacity-25 scale-75"
+                        src={'/images/placeholder.svg'}
+                        alt={item.subtitle ?? ''}
+                        width={56}
+                        height={80}
+                        className="h-full w-full scale-75 opacity-25"
                       />
                     )}
                   </div>
                   <div>
-                    <p className="label-md font-semibold text-primary truncate w-full">
-                      {item.subtitle}
-                    </p>
-                    <p className="label-md truncate w-full">{item.title}</p>
-                    <p className="label-lg mt-2">
+                    <p className="heading-xs w-full truncate text-primary">{item.title}</p>
+                    <p className="label-md w-full truncate text-secondary">{item.subtitle}</p>
+                    <p className="label-lg mt-2 text-primary">
                       {convertToLocale({
                         amount: item.subtotal,
-                        currency_code: order.currency_code,
+                        currency_code: order.currency_code
                       })}
                     </p>
                   </div>
@@ -79,56 +91,51 @@ export const ReturnItemsTab = ({
               </div>
               <div className="md:w-1/3">
                 <Listbox
-                  value={
-                    selectedItems.find((i) => i.line_item_id === item.id)
-                      ?.reason_id
-                  }
-                  onChange={(value) => handleSelectItem(item, value || "")}
+                  value={selectedItems.find(i => i.line_item_id === item.id)?.reason_id}
+                  onChange={value => handleSelectItem(item, value || '')}
                 >
                   <div className="relative">
                     <ListboxButton
                       className={cn(
-                        "relative w-full flex justify-between items-center px-4 h-12 bg-component-secondary text-left  cursor-default focus:outline-none border rounded-lg focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-gray-300 focus-visible:ring-offset-2 focus-visible:border-gray-300 text-base-regular",
+                        'text-base-regular relative flex h-12 w-full cursor-default items-center justify-between rounded-lg border bg-component-secondary px-4 text-left focus:outline-none focus-visible:border-gray-300 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-300',
                         error &&
-                          !selectedItems.find((i) => i.line_item_id === item.id)
-                            ?.reason_id &&
-                          "border-red-700"
+                          selectedItems.some(i => i.line_item_id === item.id) &&
+                          !selectedItems.find(i => i.line_item_id === item.id)?.reason_id &&
+                          'border-red-700'
                       )}
                     >
                       {({ open }) => (
                         <>
                           <span className="block truncate">
                             {returnReasons.find(
-                              (r) =>
+                              r =>
                                 r.id ===
-                                selectedItems.find(
-                                  (i) => i.line_item_id === item.id
-                                )?.reason_id
-                            )?.label || "Select Reason"}
+                                selectedItems.find(i => i.line_item_id === item.id)?.reason_id
+                            )?.label || 'Select Reason'}
                           </span>
                           <ChevronUpDown
-                            className={clx("transition-rotate duration-200", {
-                              "transform rotate-180": open,
+                            className={clx('transition-rotate duration-200', {
+                              'rotate-180 transform': open
                             })}
                           />
                         </>
                       )}
                     </ListboxButton>
-                    <ListboxOptions className="absolute z-20 w-full overflow-auto text-small-regular bg-white border rounded-lg border-top-0 max-h-60 focus:outline-none sm:text-sm">
-                      {returnReasons.map((reason) => (
+                    <ListboxOptions className="text-small-regular border-top-0 absolute z-20 max-h-60 w-full overflow-auto rounded-lg border bg-white focus:outline-none sm:text-sm">
+                      {returnReasons.map(reason => (
                         <ListboxOption
                           key={reason.id}
                           value={reason.id}
-                          className="cursor-default select-none relative pl-6 pr-10 hover:bg-gray-50 py-4 border-b"
+                          className="relative cursor-default select-none border-b py-4 pl-6 pr-10 hover:bg-gray-50"
                         >
                           {reason.label}
                         </ListboxOption>
                       ))}
                     </ListboxOptions>
                     {error &&
-                      !selectedItems.find((i) => i.line_item_id === item.id)
-                        ?.reason_id && (
-                        <p className="absolute -bottom-6 text-red-700 label-md">
+                      selectedItems.some(i => i.line_item_id === item.id) &&
+                      !selectedItems.find(i => i.line_item_id === item.id)?.reason_id && (
+                        <p className="label-md absolute -bottom-6 text-red-700">
                           Please select reason
                         </p>
                       )}
@@ -140,5 +147,5 @@ export const ReturnItemsTab = ({
         </ul>
       </Card>
     </div>
-  )
-}
+  );
+};

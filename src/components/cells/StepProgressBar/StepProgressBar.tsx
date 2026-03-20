@@ -1,51 +1,70 @@
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 export const StepProgressBar = ({
   steps,
-  currentStep,
+  currentStep
 }: {
-  steps: string[]
-  currentStep: number
+  steps: string[];
+  currentStep: number;
 }) => {
-  const length = steps.length || 0
-
   return (
-    <div className={`grid grid-cols-${length} h-16`}>
-      {steps.map((step, index) => (
-        <div key={step} className="relative">
-          <p
-            className={cn(
-              "text-center label-md text-primary",
-              index <= currentStep ? "!font-bold" : "!font-normal"
-            )}
+    <div className="flex w-full flex-col gap-4">
+      <div
+        className="grid w-full gap-2"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}
+      >
+        {steps.map((step, index) => (
+          <div
+            key={step}
+            className="flex min-w-0 items-center justify-center"
           >
-            {step}
-          </p>
-          <div className="absolute bottom-2 left-0 w-full flex items-center justify-center">
-            <div
+            <span
               className={cn(
-                "absolute left-0 w-1/2 border-y",
-                index <= currentStep ? "border-primary" : ""
+                'heading-xs text-center uppercase text-primary',
+                index <= currentStep ? 'opacity-100' : 'opacity-20'
               )}
+            >
+              {step}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div
+        className="grid w-full items-center"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}
+      >
+        {steps.map((step, index) => (
+          <div
+            key={step}
+            className="flex items-center"
+          >
+            <span
+              className={cn(
+                'min-w-0 flex-1 border-t',
+                index <= currentStep ? 'border-action' : 'border-primary'
+              )}
+              style={{ minHeight: 0 }}
             />
-            <div
+            <span
               className={cn(
-                "absolute left-1/2 w-1/2 border-y",
-                index + 1 <= currentStep ? "border-primary" : "",
-                currentStep === steps.length - 1 ? "border-primary" : ""
+                'shrink-0 rounded-xs',
+                index <= currentStep ? 'bg-action' : 'border border-primary bg-primary'
               )}
+              style={{ width: 8, height: 8 }}
             />
-            <div
+            <span
               className={cn(
-                "w-2 h-2 border-2 rounded-full mx-auto z-10 bg-tertiary",
-                index <= currentStep
-                  ? "bg-tertiary border-primary"
-                  : "bg-secondary"
+                'min-w-0 flex-1 border-t',
+                index + 1 <= currentStep ||
+                  (currentStep === steps.length - 1 && index === steps.length - 1)
+                  ? 'border-action'
+                  : 'border-primary'
               )}
+              style={{ minHeight: 0 }}
             />
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  )
-}
+  );
+};

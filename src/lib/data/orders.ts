@@ -37,7 +37,7 @@ export const retrieveOrder = async (id: string) => {
       method: 'GET',
       query: {
         fields:
-          '*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product,*seller,*order_set'
+          '*payment_collections.payments,*items,*items.metadata,*items.variant,*items.product,*seller,*order_set,*fulfillments'
       },
       headers,
       next,
@@ -185,6 +185,41 @@ export const declineTransferRequest = async (id: string, token: string) => {
     .declineTransfer(id, { token }, {}, headers)
     .then(({ order }) => ({ success: true, error: null, order }))
     .catch(err => ({ success: false, error: err.message, order: null }));
+};
+
+export const cancelOrder = async (orderId: string) => {
+  const headers = {
+    ...(await getAuthHeaders())
+  };
+
+  return sdk.client
+    .fetch<{ order: { id: string; status: string } }>(`/store/orders/${orderId}/cancel`, {
+      method: 'POST',
+      headers
+    })
+    .catch(err => medusaError(err));
+};
+
+export const cancelOrderItems = async (
+  orderId: string,
+  items: { id: string; quantity: number }[]
+) => {
+  const headers = {
+    ...(await getAuthHeaders()),
+    'Content-Type': 'application/json'
+  };
+
+  return sdk.client
+    .fetch<{
+      order_id: string;
+      canceled_items: { id: string; quantity: number }[];
+      refund_amount: number;
+    }>(`/store/orders/${orderId}/items/cancel`, {
+      method: 'POST',
+      headers,
+      body: { items }
+    })
+    .catch(err => medusaError(err));
 };
 
 export const retrieveReturnReasons = async () => {

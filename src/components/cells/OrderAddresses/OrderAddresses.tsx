@@ -1,16 +1,16 @@
-import { Card } from "@/components/atoms"
-import { retrieveCustomer } from "@/lib/data/customer"
-import { getRegion } from "@/lib/data/regions"
+import { Card } from '@/components/atoms';
+import { retrieveCustomer } from '@/lib/data/customer';
+import { getRegion } from '@/lib/data/regions';
 
 export const OrderAddresses = async ({ singleOrder }: { singleOrder: any }) => {
-  const user = await retrieveCustomer()
-  const region = await getRegion(singleOrder.shipping_address.country_code)
+  const user = await retrieveCustomer();
+  const region = await getRegion(singleOrder.shipping_address.country_code);
 
-  if (!user) return null
+  if (!user) return null;
 
   return (
-    <Card className="px-4 grid sm:grid-cols-2 gap-4">
-      <div className="flex flex-col ">
+    <Card className="flex flex-col gap-1 p-1 md:flex-row">
+      <div className="flex min-w-0 flex-1 flex-col p-3">
         <h4 className="label-md text-primary">Shipping address</h4>
         <p className="label-md text-secondary">
           {`${singleOrder.shipping_address.first_name} ${singleOrder.shipping_address.last_name}`}
@@ -21,7 +21,7 @@ export const OrderAddresses = async ({ singleOrder }: { singleOrder: any }) => {
           } ${singleOrder.shipping_address.city}${
             singleOrder.shipping_address.province
               ? `, ${singleOrder.shipping_address.province}`
-              : ""
+              : ''
           }${
             region
               ? `, ${region.name}`
@@ -32,9 +32,10 @@ export const OrderAddresses = async ({ singleOrder }: { singleOrder: any }) => {
           {`${user.email}, ${singleOrder.shipping_address.phone || user.phone}`}
         </p>
       </div>
-      <div>
+      <div className="flex min-w-0 flex-1 flex-col p-3">
         <h4 className="label-md text-primary">Billing address</h4>
-        {singleOrder.billing_address.id === singleOrder.shipping_address.id ? (
+        {!singleOrder.billing_address ||
+        singleOrder.billing_address.id === singleOrder.shipping_address.id ? (
           <p className="label-md text-secondary">Same as shipping address</p>
         ) : (
           <>
@@ -47,7 +48,7 @@ export const OrderAddresses = async ({ singleOrder }: { singleOrder: any }) => {
               } ${singleOrder.billing_address.city}${
                 singleOrder.billing_address.province
                   ? `, ${singleOrder.billing_address.province}`
-                  : ""
+                  : ''
               }${
                 region
                   ? `, ${region.name}`
@@ -55,13 +56,11 @@ export const OrderAddresses = async ({ singleOrder }: { singleOrder: any }) => {
               }`}
             </p>
             <p className="label-md text-secondary">
-              {`${user.email}, ${
-                singleOrder.billing_address.phone || user.phone
-              }`}
+              {`${user.email}, ${singleOrder.billing_address.phone || user.phone}`}
             </p>
           </>
         )}
       </div>
     </Card>
-  )
-}
+  );
+};

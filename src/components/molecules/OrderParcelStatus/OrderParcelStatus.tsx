@@ -1,12 +1,21 @@
-import { StepProgressBar } from "@/components/cells/StepProgressBar/StepProgressBar"
-import { parcelStatuses, steps } from "@/lib/helpers/parcel-statuses"
+import { StepProgressBar } from '@/components/cells/StepProgressBar/StepProgressBar';
+import { parcelStatuses, steps } from '@/lib/helpers/parcel-statuses';
 
 export const OrderParcelStatus = ({ order }: { order: any }) => {
-  let currentStep = parcelStatuses(order.fulfillment_status)
+  if (order.status === 'canceled') {
+    return <p className="heading-xs uppercase text-primary">Canceled</p>;
+  }
+
+  const currentStep = parcelStatuses(order.fulfillment_status);
 
   return (
-    <div>
-      <StepProgressBar steps={steps} currentStep={currentStep} />
+    <div className="overflow-x-auto">
+      <div className="min-w-[480px]">
+        <StepProgressBar
+          steps={steps}
+          currentStep={currentStep}
+        />
+      </div>
     </div>
-  )
-}
+  );
+};

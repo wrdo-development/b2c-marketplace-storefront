@@ -1,31 +1,51 @@
-import { Divider } from "@/components/atoms"
-import { SingleProductSeller } from "@/types/product"
-import { format } from "date-fns"
-import { SellerAvatar } from "../SellerAvatar/SellerAvatar"
-import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
+import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedLink';
+import { SingleProductSeller } from '@/types/product';
+
+import { SellerAvatar } from '../SellerAvatar/SellerAvatar';
 
 export const CartItemsHeader = ({
   seller,
+  parcelNumber,
+  variant = 'default'
 }: {
-  seller: SingleProductSeller
+  seller: SingleProductSeller;
+  parcelNumber: number;
+  variant?: 'default' | 'checkout';
 }) => {
+  if (variant === 'checkout') {
+    return (
+      <div className="flex h-[54px] items-center justify-between rounded-sm border bg-component-secondary p-4">
+        <div className="flex items-center gap-1">
+          <span className="label-md text-secondary">Seller:</span>
+          <span className="label-md text-primary">{seller.name}</span>
+        </div>
+        <span className="label-md text-secondary">Parcel {parcelNumber}</span>
+      </div>
+    );
+  }
+
   return (
     <LocalizedClientLink href={`/sellers/${seller.handle}`}>
-      <div className="border rounded-sm p-4 flex gap-4 items-center">
-        <SellerAvatar photo={seller.photo} size={32} alt={seller.name} />
-
-        <div className="lg:flex gap-2">
-          <p className="uppercase heading-xs">{seller.name}</p>
-          {seller.id !== "fleek" && (
-            <div className="flex items-center gap-2">
-              <Divider square />
-              <p className="label-md text-secondary">
-                Joined: {format(seller.created_at || "", "yyyy-MM-dd")}
-              </p>
-            </div>
-          )}
+      <div className="flex items-center justify-between rounded-sm border p-4">
+        <div className="flex items-center gap-4">
+          <SellerAvatar
+            photo={seller.photo}
+            size={32}
+            alt={seller.name}
+            className="lg:hidden"
+          />
+          <div className="flex flex-col lg:flex-row lg:items-center lg:gap-1">
+            <p className="label-md text-primary">Parcel #{parcelNumber} delivered by</p>
+            <p className="heading-xs uppercase text-primary">{seller.name}</p>
+          </div>
         </div>
+        <SellerAvatar
+          photo={seller.photo}
+          size={32}
+          alt={seller.name}
+          className="hidden lg:block"
+        />
       </div>
     </LocalizedClientLink>
-  )
-}
+  );
+};

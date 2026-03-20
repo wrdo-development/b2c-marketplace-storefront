@@ -13,11 +13,13 @@ import { Wishlist } from '@/types/wishlist';
 export const WishlistButton = ({
   productId,
   wishlist,
-  user
+  user,
+  variant = 'tonal'
 }: {
   productId: string;
   wishlist?: Wishlist;
   user?: HttpTypes.StoreCustomer | null;
+  variant?: 'tonal' | 'text';
 }) => {
   const [isWishlistAdding, setIsWishlistAdding] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(
@@ -68,7 +70,7 @@ export const WishlistButton = ({
   return (
     <Button
       onClick={isWishlisted ? () => handleRemoveFromWishlist() : () => handleAddToWishlist()}
-      variant="tonal"
+      variant={variant}
       className="flex h-10 w-10 items-center justify-center p-0"
       loading={isWishlistAdding}
       disabled={isWishlistAdding}

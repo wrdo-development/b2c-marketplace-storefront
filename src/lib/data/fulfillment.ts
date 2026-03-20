@@ -2,7 +2,7 @@
 
 import { HttpTypes } from '@medusajs/types';
 
-import { StoreCardShippingMethod } from '@/components/sections/CartShippingMethodsSection/CartShippingMethodsSection';
+import { ShippingOption } from '@/components/sections/CartShippingMethodsSection/CartShippingMethodsSection';
 import { sdk } from '@/lib/config';
 
 import { getAuthHeaders, getCacheOptions } from './cookies';
@@ -17,7 +17,7 @@ export const listCartShippingMethods = async (cartId: string, is_return: boolean
   };
 
   return sdk.client
-    .fetch<{ shipping_options: StoreCardShippingMethod[] | null }>(`/store/shipping-options`, {
+    .fetch<{ shipping_options: ShippingOption[] | null }>(`/store/shipping-options`, {
       method: 'GET',
       query: {
         cart_id: cartId,

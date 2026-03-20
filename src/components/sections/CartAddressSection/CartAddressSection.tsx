@@ -1,142 +1,158 @@
-"use client"
+'use client';
 
-import { Heading, Text, useToggleState } from "@medusajs/ui"
-import { setAddresses } from "@/lib/data/cart"
-import compareAddresses from "@/lib/helpers/compare-addresses"
-import { HttpTypes } from "@medusajs/types"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useActionState, useEffect } from "react"
-import { Button } from "@/components/atoms"
-import ErrorMessage from "@/components/molecules/ErrorMessage/ErrorMessage"
-import Spinner from "@/icons/spinner"
-import ShippingAddress from "@/components/organisms/ShippingAddress/ShippingAddress"
-import { CheckCircleSolid } from "@medusajs/icons"
-import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
+import { useRef, useState } from 'react';
+
+import { HttpTypes } from '@medusajs/types';
+import { useToggleState } from '@medusajs/ui';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+
+import { Button, Divider } from '@/components/atoms';
+import ErrorMessage from '@/components/molecules/ErrorMessage/ErrorMessage';
+import ShippingAddress, {
+  ShippingAddressHandle
+} from '@/components/organisms/ShippingAddress/ShippingAddress';
+import { TickThinIcon } from '@/icons';
+import Spinner from '@/icons/spinner';
+import { setAddresses } from '@/lib/data/cart';
+import compareAddresses from '@/lib/helpers/compare-addresses';
+import isAddressComplete from '@/lib/helpers/is-address-complete';
 
 export const CartAddressSection = ({
   cart,
-  customer,
+  customer
 }: {
-  cart: HttpTypes.StoreCart | null
-  customer: HttpTypes.StoreCustomer | null
+  cart: HttpTypes.StoreCart | null;
+  customer: HttpTypes.StoreCustomer | null;
 }) => {
-  const searchParams = useSearchParams()
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const isAddress = Boolean(
-    cart?.shipping_address &&
-      cart?.shipping_address.first_name &&
-      cart?.shipping_address.last_name &&
-      cart?.shipping_address.address_1 &&
-      cart?.shipping_address.city &&
-      cart?.shipping_address.postal_code &&
-      cart?.shipping_address.country_code
-  )
-  const isOpen = searchParams.get("step") === "address" || !isAddress
+  const isAddress = isAddressComplete(cart?.shipping_address);
+
+  const isOpen = searchParams.get('step') === 'address';
 
   const { state: sameAsBilling, toggle: toggleSameAsBilling } = useToggleState(
-    cart?.shipping_address && cart?.billing_address
-      ? compareAddresses(cart?.shipping_address, cart?.billing_address)
-      : true
-  )
+    !cart?.billing_address || compareAddresses(cart.shipping_address, cart.billing_address)
+  );
 
-  const [message, formAction] = useActionState(setAddresses, sameAsBilling)
+  const shippingRef = useRef<ShippingAddressHandle>(null);
 
-  useEffect(() => {
-    if (!isAddress) {
-      router.replace(pathname + "?step=address")
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!shippingRef.current?.validate()) return;
+    const data = shippingRef.current.getAddressData();
+    setIsPending(true);
+    const result = await setAddresses(data);
+    setIsPending(false);
+    if (result) {
+      setError(result);
+      return;
     }
-  }, [isAddress])
+    router.replace(`${pathname}?step=delivery`);
+    router.refresh();
+  };
 
   const handleEdit = () => {
-    router.replace(pathname + "?step=address")
-  }
+    router.replace(pathname + '?step=address');
+  };
 
   return (
-    <div className="border p-4 rounded-sm bg-ui-bg-interactive" data-testid="checkout-step-address">
-      <div className="flex flex-row items-center justify-between mb-6">
-        <Heading
-          level="h2"
-          className="flex flex-row text-3xl-regular gap-x-2 items-baseline items-center"
-        >
-          {!isOpen && <CheckCircleSolid />} Shipping Address
-        </Heading>
+    <div
+      className="overflow-hidden rounded-sm border"
+      data-testid="checkout-step-address"
+    >
+      <div className="flex items-center justify-between bg-component-secondary p-4">
+        <div className="flex items-center gap-2">
+          {!isOpen && isAddress ? (
+            <span className="flex w-10 shrink-0 justify-center">
+              <TickThinIcon size={24} />
+            </span>
+          ) : (
+            <span className="heading-md w-10 shrink-0 text-center text-primary">1</span>
+          )}
+          <span className="heading-md uppercase text-primary">SHIPPING ADDRESS</span>
+        </div>
         {!isOpen && isAddress && (
-          <Text>
-            <Button onClick={handleEdit} variant="tonal" data-testid="checkout-address-edit-button">
-              Edit
-            </Button>
-          </Text>
+          <Button
+            onClick={handleEdit}
+            variant="tonal"
+            data-testid="checkout-address-edit-button"
+          >
+            EDIT
+          </Button>
         )}
       </div>
       <form
-        action={async (data) => {
-          await formAction(data)
-          router.replace(`${pathname}?step=delivery`)
-          router.refresh()
+        noValidate
+        onSubmit={e => {
+          e.preventDefault();
+          handleSubmit();
         }}
       >
         {isOpen ? (
-          <div className="pb-8">
-            <ShippingAddress
-              customer={customer}
-              checked={sameAsBilling}
-              onChange={toggleSameAsBilling}
-              cart={cart}
-            />
-            <Button
-              className="mt-6"
-              data-testid="submit-address-button"
-              variant="tonal"
-            >
-              Save
-            </Button>
-            <ErrorMessage
-              error={message !== "success" && message}
-              data-testid="address-error-message"
-            />
-          </div>
-        ) : (
-          <div>
-            <div className="text-small-regular">
-              {cart && cart.shipping_address ? (
-                <div className="flex items-start gap-x-8">
-                  <div className="flex items-start gap-x-1 w-full">
-                    <div>
-                      <Text className="txt-medium-plus font-bold">
-                        {cart.shipping_address.first_name}{" "}
-                        {cart.shipping_address.last_name}
-                      </Text>
-                      <Text>
-                        {cart.shipping_address.address_1}{" "}
-                        {cart.shipping_address.address_2},{" "}
-                        {cart.shipping_address.postal_code}{" "}
-                        {cart.shipping_address.city},{" "}
-                        {cart.shipping_address.country_code?.toUpperCase()}
-                      </Text>
-                      <Text>
-                        {cart.email}, {cart.shipping_address.phone}
-                      </Text>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <Spinner />
-                </div>
-              )}
+          <div className="border-t border-primary">
+            <div className="p-4">
+              <ShippingAddress
+                ref={shippingRef}
+                customer={customer}
+                checked={sameAsBilling}
+                onChange={toggleSameAsBilling}
+                cart={cart}
+              />
+            </div>
+            <Divider />
+            <div className="p-4">
+              <Button
+                className="w-full"
+                data-testid="submit-address-button"
+                variant="filled"
+                disabled={isPending}
+                loading={isPending}
+              >
+                PROCEED TO DELIVERY
+              </Button>
+              <ErrorMessage
+                error={error}
+                data-testid="address-error-message"
+              />
             </div>
           </div>
-        )}
-        {isAddress && !searchParams.get("step") && (
-          <LocalizedClientLink href="/checkout?step=delivery">
-            <Button className="mt-6" variant="tonal">
-              Continue to Delivery
-            </Button>
-          </LocalizedClientLink>
+        ) : (
+          <div className="border-t border-primary">
+            {cart && cart.shipping_address ? (
+              <div className="p-2">
+                <div className="rounded-sm p-3">
+                  <p className="label-md text-primary">Shipping address</p>
+                  <p className="label-md whitespace-pre-wrap text-secondary">
+                    {`${cart.shipping_address.first_name} ${cart.shipping_address.last_name}\n${cart.shipping_address.address_1}${cart.shipping_address.address_2 ? ` ${cart.shipping_address.address_2}` : ''}\n${cart.shipping_address.postal_code} ${cart.shipping_address.city}, ${cart.shipping_address.country_code?.toUpperCase()}`}
+                  </p>
+                  <p className="label-md text-secondary">
+                    {cart.email}, {cart.shipping_address.phone}
+                  </p>
+                </div>
+                <div className="rounded-sm p-3">
+                  <p className="label-md text-primary">Billing address</p>
+                  <p className="label-md text-secondary">
+                    {!cart.billing_address ||
+                    compareAddresses(cart.shipping_address, cart.billing_address)
+                      ? 'Same as shipping address'
+                      : cart.billing_address?.first_name
+                        ? `${cart.billing_address.first_name} ${cart.billing_address.last_name}, ${cart.billing_address.address_1}, ${cart.billing_address.postal_code} ${cart.billing_address.city}, ${cart.billing_address.country_code?.toUpperCase()}`
+                        : ''}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4">
+                <Spinner />
+              </div>
+            )}
+          </div>
         )}
       </form>
     </div>
-  )
-}
+  );
+};

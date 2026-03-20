@@ -94,20 +94,11 @@ export const listProducts = async ({
 
       const nextPage = count > offset + limit ? pageParam + 1 : null;
 
-      const response = products.filter(prod => {
+      const response = products.map(prod => {
         // @ts-ignore Property 'seller' exists but TypeScript doesn't recognize it
         const reviews = prod.seller?.reviews.filter(item => !!item) ?? [];
-        return (
-          // @ts-ignore Property 'seller' exists but TypeScript doesn't recognize it
-          prod?.seller && {
-            ...prod,
-            seller: {
-              // @ts-ignore Property 'seller' exists but TypeScript doesn't recognize it
-              ...prod.seller,
-              reviews
-            }
-          }
-        );
+        // @ts-ignore Property 'seller' exists but TypeScript doesn't recognize it
+        return prod.seller ? { ...prod, seller: { ...prod.seller, reviews } } : prod;
       });
 
       return {
@@ -250,8 +241,8 @@ export const searchProducts = async (params: {
 
   let facets = params.facets;
 
-  if(!facets) {
-    facets = ["variants.condition", "variants.color", "variants.size"];
+  if (!facets) {
+    facets = ['variants.condition', 'variants.color', 'variants.size'];
   }
 
   const { countryCode, ...bodyParams } = params;
@@ -272,12 +263,12 @@ export const searchProducts = async (params: {
         region_id,
         customer_id,
         facets,
-        maxValuesPerFacet: 100,
+        maxValuesPerFacet: 100
       },
       headers,
       cache: 'no-cache'
     })
-    .then((response) => {
+    .then(response => {
       return response;
     })
     .catch(() => {

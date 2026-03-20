@@ -10,7 +10,7 @@ import { FieldError, FieldValues, FormProvider, useForm, useFormContext } from '
 import { Button } from '@/components/atoms';
 import { Alert } from '@/components/atoms/Alert/Alert';
 import { LabeledInput } from '@/components/cells';
-import { login } from '@/lib/data/customer';
+import { login, transferCart } from '@/lib/data/customer';
 import { toast } from '@/lib/helpers/toast';
 
 import { LoginFormData, loginFormSchema } from './schema';
@@ -49,21 +49,14 @@ const Form = () => {
     formData.append('password', data.password);
 
     const res = await login(formData);
-    if (res) {
-      // Temporary solution. API returns 200 code in case of auth error. To change when API is updated.
-      const isCredentialsError =
-        res.toLowerCase().includes('invalid email or password') ||
-        res.toLowerCase().includes('unauthorized') ||
-        res.toLowerCase().includes('incorrect') ||
-        res.toLowerCase().includes('credentials');
 
-      setIsAuthError(isCredentialsError);
-
-      const errorMessage = isCredentialsError ? 'Incorrect email or password' : res;
-
-      toast.error({ title: errorMessage || 'An error occurred. Please try again.' });
-      return;
+    if (res.success) {
+      router.push('/user');
+      await transferCart();
+    } else {
+      toast.error({ title: res.message || 'An error occurred. Please try again.' });
     }
+
     setIsAuthError(false);
     router.push('/user');
   };
@@ -85,7 +78,10 @@ const Form = () => {
   const authMessage = getAuthMessage();
 
   return (
-    <main className="container" data-testid="login-page">
+    <main
+      className="container"
+      data-testid="login-page"
+    >
       <div className="mx-auto mt-6 w-full max-w-xl space-y-4">
         {authMessage && (
           <Alert
@@ -95,9 +91,15 @@ const Form = () => {
             data-testid="login-auth-alert"
           />
         )}
-        <div className="rounded-sm border p-4" data-testid="login-form-container">
+        <div
+          className="rounded-sm border p-4"
+          data-testid="login-form-container"
+        >
           <h1 className="heading-md mb-8 uppercase text-primary">Log in</h1>
-          <form onSubmit={handleSubmit(submit)} data-testid="login-form">
+          <form
+            onSubmit={handleSubmit(submit)}
+            data-testid="login-form"
+          >
             <div className="space-y-4">
               <LabeledInput
                 label="E-mail"
@@ -126,7 +128,11 @@ const Form = () => {
               />
             </div>
 
-            <Link href="/forgot-password" className="block text-right label-md uppercase text-action-on-secondary mt-4" data-testid="login-forgot-password-link">
+            <Link
+              href="/forgot-password"
+              className="label-md mt-4 block text-right uppercase text-action-on-secondary"
+              data-testid="login-forgot-password-link"
+            >
               Forgot your password?
             </Link>
 
@@ -144,7 +150,10 @@ const Form = () => {
           <h2 className="heading-md mb-4 uppercase text-primary">
             Don&apos;t have an account yet?
           </h2>
-          <Link href="/register" data-testid="login-register-link">
+          <Link
+            href="/register"
+            data-testid="login-register-link"
+          >
             <Button
               variant="tonal"
               className="mt-8 flex w-full justify-center uppercase"

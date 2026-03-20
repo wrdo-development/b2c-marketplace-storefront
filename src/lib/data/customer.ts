@@ -1,6 +1,5 @@
 'use server';
 
-
 import { HttpTypes } from '@medusajs/types';
 import { revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -13,33 +12,34 @@ import {
   getCartId,
   removeAuthToken,
   removeCartId,
-  setAuthToken,
-} from "./cookies"
+  setAuthToken
+} from './cookies';
 
 export const retrieveCustomer = async (): Promise<HttpTypes.StoreCustomer | null> => {
-  const authHeaders = await getAuthHeaders()
-  if (!authHeaders) return null
+  const authHeaders = await getAuthHeaders();
+  if (!authHeaders) return null;
 
   const headers = {
-      ...authHeaders,
-  }
+    ...authHeaders
+  };
 
   const next = {
-    ...(await getCacheOptions("customers")),
-  }
+    ...(await getCacheOptions('customers'))
+  };
 
-  return await sdk.client.fetch<{ customer: HttpTypes.StoreCustomer }>(`/store/customers/me`, {
-      method: "GET",
+  return await sdk.client
+    .fetch<{ customer: HttpTypes.StoreCustomer }>(`/store/customers/me`, {
+      method: 'GET',
       query: {
-        fields: "*orders",
+        fields: '*orders'
       },
       headers,
       next,
-      cache: "force-cache"
+      cache: 'force-cache'
     })
     .then(({ customer }) => customer ?? null)
-    .catch(() => null)
-}
+    .catch(() => null);
+};
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
   const headers = {
@@ -109,19 +109,17 @@ export async function login(formData: FormData) {
   const password = formData.get('password') as string;
 
   try {
-    await sdk.auth.login('customer', 'emailpass', { email, password }).then(async token => {
-      await setAuthToken(token as string);
-      const customerCacheTag = await getCacheTag('customers');
-      revalidateTag(customerCacheTag);
-    });
-  } catch (error: any) {
-    return error.toString();
-  }
+    const token = await sdk.auth.login('customer', 'emailpass', { email, password });
+    await setAuthToken(token as string);
+    const customerCacheTag = await getCacheTag('customers');
+    revalidateTag(customerCacheTag);
 
-  try {
-    await transferCart();
-  } catch (error: any) {
-    return error.toString();
+    return { success: true };
+  } catch (error: unknown) {
+    return {
+      success: false,
+      message: (error as Error)?.message || 'Unable to log in. Please try again.'
+    };
   }
 }
 

@@ -1,31 +1,33 @@
-export const Radio = ({
-  checked,
-  "data-testid": dataTestId,
-}: {
-  checked: boolean
-  "data-testid"?: string
-}) => {
+import { cn } from '@/lib/utils';
+
+type RadioIndicatorProps = {
+  selected: boolean;
+  hasError?: boolean;
+  'data-testid'?: string;
+};
+
+export const Radio = ({ selected, hasError, 'data-testid': dataTestId }: RadioIndicatorProps) => {
   return (
-    <>
-      <button
-        type="button"
-        role="radio"
-        aria-checked="true"
-        data-state={checked ? "checked" : "unchecked"}
-        className="group relative flex h-5 w-5 items-center justify-center outline-none"
-        data-testid={dataTestId || "radio-button"}
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      data-state={selected ? 'checked' : 'unchecked'}
+      className="flex shrink-0 items-center justify-center p-[10px] outline-none"
+      data-testid={dataTestId}
+    >
+      <div
+        className={cn(
+          'flex size-5 items-center justify-center rounded-full border',
+          selected
+            ? 'border-action bg-component-secondary'
+            : hasError
+              ? 'border-negative bg-component-secondary'
+              : 'border-secondary bg-component-secondary'
+        )}
       >
-        <div className="shadow-borders-base group-hover:shadow-borders-strong-with-shadow bg-ui-bg-base group-data-[state=checked]:bg-ui-bg-interactive group-data-[state=checked]:shadow-borders-interactive group-focus:!shadow-borders-interactive-with-focus group-disabled:!bg-ui-bg-disabled group-disabled:!shadow-borders-base flex h-[14px] w-[14px] items-center justify-center rounded-full transition-all">
-          {checked && (
-            <span
-              data-state={checked ? "checked" : "unchecked"}
-              className="group flex items-center justify-center"
-            >
-              <div className="bg-ui-bg-base shadow-details-contrast-on-bg-interactive group-disabled:bg-ui-fg-disabled rounded-full group-disabled:shadow-none h-1.5 w-1.5"></div>
-            </span>
-          )}
-        </div>
-      </button>
-    </>
-  )
-}
+        {selected && <div className="size-3 rounded-full bg-action" />}
+      </div>
+    </button>
+  );
+};

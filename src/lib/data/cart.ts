@@ -218,17 +218,24 @@ export async function deleteLineItem(lineId: string) {
 
 export async function setShippingMethod({
   cartId,
-  shippingMethodId
+  shippingMethodId,
+  sellerId
 }: {
   cartId: string;
   shippingMethodId: string;
+  sellerId?: string | null;
 }) {
   const headers = {
     ...(await getAuthHeaders())
   };
 
+  const body: Record<string, unknown> = { option_id: shippingMethodId };
+  if (sellerId) {
+    body.data = { seller_id: sellerId };
+  }
+
   const res = await fetchQuery(`/store/carts/${cartId}/shipping-methods`, {
-    body: { option_id: shippingMethodId },
+    body,
     method: 'POST',
     headers
   });
@@ -264,7 +271,7 @@ export async function applyPromotions(codes: string[]) {
   const cartId = await getCartId();
 
   if (!cartId) {
-    return { success: false, error: "No existing cart found" }
+    return { success: false, error: 'No existing cart found' };
   }
 
   const headers = {
@@ -272,25 +279,16 @@ export async function applyPromotions(codes: string[]) {
   };
 
   try {
-    const { cart } = await sdk.store.cart.update(
-      cartId,
-      { promo_codes: codes },
-      {},
-      headers
-    )
-    const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    const { cart } = await sdk.store.cart.update(cartId, { promo_codes: codes }, {}, headers);
+    const cartCacheTag = await getCacheTag('carts');
+    revalidateTag(cartCacheTag);
     // @ts-ignore
-    const applied = cart.promotions?.some((promotion: any) =>
-      codes.includes(promotion.code)
-    )
-    return { success: true, applied }
+    const applied = cart.promotions?.some((promotion: any) => codes.includes(promotion.code));
+    return { success: true, applied };
   } catch (error: any) {
     const errorMessage =
-      error?.response?.data?.message ||
-      error?.message ||
-      "Failed to apply promotion code"
-    return { success: false, error: errorMessage }
+      error?.response?.data?.message || error?.message || 'Failed to apply promotion code';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -343,53 +341,52 @@ export async function deletePromotionCode(promoId: string) {
     .catch(medusaError);
 }
 
-// TODO: Pass a POJO instead of a form entity here
-export async function setAddresses(currentState: unknown, formData: FormData) {
+type AddressFields = {
+  first_name: string;
+  last_name: string;
+  address_1: string;
+  company: string;
+  postal_code: string;
+  city: string;
+  country_code: string;
+  province: string;
+  phone: string;
+};
+
+export type SetAddressesPayload = {
+  shipping_address: AddressFields;
+  email: string;
+  same_as_billing: boolean;
+  billing_address?: AddressFields & { tax_id?: string };
+};
+
+export async function setAddresses(payload: SetAddressesPayload): Promise<string | void> {
   try {
-    if (!formData) {
-      throw new Error('No form data found when setting addresses');
-    }
     const cartId = getCartId();
     if (!cartId) {
       throw new Error('No existing cart found when setting addresses');
     }
 
     const data = {
-      shipping_address: {
-        first_name: formData.get('shipping_address.first_name'),
-        last_name: formData.get('shipping_address.last_name'),
-        address_1: formData.get('shipping_address.address_1'),
+      shipping_address: { ...payload.shipping_address, address_2: '' },
+      billing_address: {},
+      email: payload.email
+    };
+
+    if (payload.same_as_billing) {
+      data.billing_address = data.shipping_address;
+    } else if (payload.billing_address) {
+      const { tax_id, ...billingAddr } = payload.billing_address;
+      data.billing_address = {
+        ...billingAddr,
         address_2: '',
-        company: formData.get('shipping_address.company'),
-        postal_code: formData.get('shipping_address.postal_code'),
-        city: formData.get('shipping_address.city'),
-        country_code: formData.get('shipping_address.country_code'),
-        province: formData.get('shipping_address.province'),
-        phone: formData.get('shipping_address.phone')
-      },
-      email: formData.get('email')
-    } as any;
-
-    // const sameAsBilling = formData.get("same_as_billing")
-    // if (sameAsBilling === "on") data.billing_address = data.shipping_address
-    data.billing_address = data.shipping_address;
-
-    // if (sameAsBilling !== "on")
-    //   data.billing_address = {
-    //     first_name: formData.get("billing_address.first_name"),
-    //     last_name: formData.get("billing_address.last_name"),
-    //     address_1: formData.get("billing_address.address_1"),
-    //     address_2: "",
-    //     company: formData.get("billing_address.company"),
-    //     postal_code: formData.get("billing_address.postal_code"),
-    //     city: formData.get("billing_address.city"),
-    //     country_code: formData.get("billing_address.country_code"),
-    //     province: formData.get("billing_address.province"),
-    //     phone: formData.get("billing_address.phone"),
-    //   }
+        metadata: { tax_id }
+      };
+    }
 
     await updateCart(data);
-    await revalidatePath('/cart');
+    const cartCacheTag = await getCacheTag('carts');
+    revalidateTag(cartCacheTag);
   } catch (e: any) {
     return e.message;
   }

@@ -6,7 +6,6 @@ import {
   LogoutButton,
   NavigationItem,
 } from "@/components/atoms"
-import { useUnreads } from "@talkjs/react"
 import { usePathname } from "next/navigation"
 
 const navigationItems = [
@@ -37,7 +36,8 @@ const navigationItems = [
 ]
 
 export const UserNavigation = () => {
-  const unreads = useUnreads()
+  // TalkJS removed (WRDO-177) — unread badge returns with the WRDO spine.
+  const unreads: unknown[] = []
   const path = usePathname()
 
   return (

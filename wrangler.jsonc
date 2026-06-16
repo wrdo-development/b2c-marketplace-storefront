@@ -4,7 +4,10 @@
   "name": "wrdo-storefront",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "routes": [{ "pattern": "shop.wrdo.co.za", "custom_domain": true }],
+  // shop.wrdo.co.za is bound via the workers/domains API (the prd_infra CF
+  // token lacks zone workers/routes:Edit — inline `routes` 403s "auth error
+  // 10000" on /zones/.../workers/routes, which also ABORTS the worker upload).
+  // Domain already bound; keep routes out so `deploy` uploads cleanly.
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

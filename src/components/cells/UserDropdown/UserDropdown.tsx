@@ -10,7 +10,6 @@ import { Dropdown } from "@/components/molecules"
 import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
 import { ProfileIcon } from "@/icons"
 import { HttpTypes } from "@medusajs/types"
-import { useUnreads } from "@talkjs/react"
 import { useState } from "react"
 
 export const UserDropdown = ({
@@ -20,7 +19,8 @@ export const UserDropdown = ({
 }) => {
   const [open, setOpen] = useState(false)
 
-  const unreads = useUnreads()
+  // TalkJS removed (WRDO-177) — unread badge returns with the WRDO spine.
+  const unreads: unknown[] = []
 
   return (
     <div

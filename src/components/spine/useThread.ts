@@ -14,7 +14,7 @@ const POLL_INTERVAL_MS = 3000;
 /**
  * useThread — the single client-side engine for the WRDO conversation spine.
  *
- * Same-origin only: every call is a relative `/store/*` fetch with
+ * Same-origin only: every call is a relative `/spine/*` fetch with
  * `credentials: 'same-origin'`, so the wrdo_spine httpOnly cookie rides along
  * and there's no CORS. There is no Medusa js-sdk here on purpose.
  *
@@ -133,8 +133,8 @@ export function useThread(): UseThreadResult {
     try {
       const cursor = cursorRef.current;
       const url = cursor
-        ? `/store/messages?after=${encodeURIComponent(cursor)}`
-        : '/store/messages';
+        ? `/spine/messages?after=${encodeURIComponent(cursor)}`
+        : '/spine/messages';
       const res = await fetch(url, {
         method: 'GET',
         credentials: 'same-origin',
@@ -158,7 +158,7 @@ export function useThread(): UseThreadResult {
     }
 
     try {
-      const res = await fetch('/store/thread', {
+      const res = await fetch('/spine/thread', {
         method: 'GET',
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
@@ -219,7 +219,7 @@ export function useThread(): UseThreadResult {
       setMessages((prev) => mergeMessages(prev, [optimistic]));
 
       try {
-        const res = await fetch('/store/messages', {
+        const res = await fetch('/spine/messages', {
           method: 'POST',
           credentials: 'same-origin',
           headers: {
@@ -291,7 +291,7 @@ async function exchangeTokenIfPresent(): Promise<void> {
   exchangedToken = token;
 
   try {
-    await fetch('/store/session/exchange', {
+    await fetch('/spine/session/exchange', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {

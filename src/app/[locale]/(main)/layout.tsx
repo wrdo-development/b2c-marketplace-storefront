@@ -24,7 +24,7 @@ export default async function RootLayout({
   const userName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
 
   // The WRDO spine provider always wraps the app: the conversation is keyed by
-  // the wrdo_spine httpOnly cookie (set via /store/session/exchange), not by
+  // the wrdo_spine httpOnly cookie (set via /spine/session/exchange), not by
   // Medusa auth — so the chat surface works even for handoff visitors who
   // arrive via shop.wrdo.co.za/c?t=<token> without a logged-in customer.
   return (

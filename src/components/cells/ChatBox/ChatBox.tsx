@@ -9,7 +9,7 @@ import { SpineAction, SpineMessageContext } from '@/components/spine/types';
 /**
  * WRDO spine chat surface (WRDO-180). TalkJS removed (WRDO-177); this is now the
  * real chat widget. It reads the shared spine thread from SpineContext (one poll
- * loop for the whole page) and sends via the same-origin /store/messages API.
+ * loop for the whole page) and sends via the same-origin /spine/messages API.
  *
  * Props signature preserved from the TalkJS removal so callers (Chat.tsx) don't
  * break. currentUser/supportUser are no longer needed for transport (the spine

@@ -3,12 +3,12 @@
  *
  * The spine is one server-side conversation thread that WhatsApp, the storefront
  * web widget, and the canvas are all windows onto. These types mirror the
- * same-origin `/store/*` spine API.
+ * same-origin `/spine/*` spine API.
  */
 
 export type SpineSender = 'user' | 'wrdo';
 
-/** A message as returned by GET /store/messages. */
+/** A message as returned by GET /spine/messages. */
 export interface SpineMessage {
   id: string;
   sender: SpineSender;
@@ -38,19 +38,19 @@ export interface SpineMessageContext {
   [key: string]: unknown;
 }
 
-/** WebRenderer payload returned by POST /store/messages. */
+/** WebRenderer payload returned by POST /spine/messages. */
 export interface WebRendererPayload {
   kind: 'web';
   text: string;
   actions?: SpineAction[];
 }
 
-/** GET /store/messages response. */
+/** GET /spine/messages response. */
 export interface MessagesResponse {
   messages: SpineMessage[];
 }
 
-/** GET /store/thread response. */
+/** GET /spine/thread response. */
 export interface ThreadResponse {
   thread: unknown;
   unreadCount: number;

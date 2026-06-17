@@ -1,13 +1,16 @@
-"use client"
+'use client';
+
+import { ChatBox } from '@/components/cells/ChatBox/ChatBox';
 
 /**
- * TalkJS removed (WRDO-177). The messages inbox moves to WRDO's single-thread
- * spine. Placeholder until the WRDO widget slots in here. (wrdo fork)
+ * WRDO spine messages inbox (WRDO-180). TalkJS removed (WRDO-177). This is the
+ * full-height view of the single spine thread — it reuses ChatBox (which reads
+ * the shared SpineContext), so there's still only one poll loop on the page.
  */
 export const UserMessagesSection = () => {
   return (
-    <div className="max-w-full h-[655px] flex items-center justify-center text-center text-sm text-secondary">
-      Your messages are moving to WRDO — coming soon.
+    <div className="max-w-full h-[655px]">
+      <ChatBox fullHeight />
     </div>
-  )
-}
+  );
+};

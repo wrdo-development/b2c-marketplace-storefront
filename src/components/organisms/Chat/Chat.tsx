@@ -10,8 +10,6 @@ import { Modal } from '@/components/molecules';
 import { MessageIcon } from '@/icons';
 import { SellerProps } from '@/types/seller';
 
-const TALKJS_APP_ID = process.env.NEXT_PUBLIC_TALKJS_APP_ID || '';
-
 export const Chat = ({
   user,
   seller,
@@ -35,11 +33,10 @@ export const Chat = ({
 }) => {
   const [modal, setModal] = useState(false);
 
-  if (!TALKJS_APP_ID) {
-    return null;
-  }
-
-  if (!user?.id || !user?.email || !seller?.id || !seller?.email) {
+  // The WRDO spine is keyed by the wrdo_spine cookie, not by user/seller email,
+  // but keep the guard so the "write to seller" entry only shows in a logged-in
+  // buyer↔seller context (mirrors the pre-spine behaviour).
+  if (!user?.id || !seller?.id) {
     return null;
   }
 

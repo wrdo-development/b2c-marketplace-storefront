@@ -12,7 +12,6 @@ export default async function RootLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  const APP_ID = process.env.NEXT_PUBLIC_TALKJS_APP_ID;
   const { locale } = await params;
 
   const user = await retrieveCustomer();
@@ -22,23 +21,17 @@ export default async function RootLayout({
     return redirect('/');
   }
 
-  if (!APP_ID || !user || !user.id || !user.email)
-    return (
-      <>
-        <Header locale={locale} />
-        {children}
-        <Footer />
-      </>
-    );
+  const userName = [user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User';
 
-  const userName = [user.first_name, user.last_name].filter(Boolean).join(' ') || 'User';
-
+  // The WRDO spine provider always wraps the app: the conversation is keyed by
+  // the wrdo_spine httpOnly cookie (set via /store/session/exchange), not by
+  // Medusa auth — so the chat surface works even for handoff visitors who
+  // arrive via shop.wrdo.co.za/c?t=<token> without a logged-in customer.
   return (
     <TalkJsProvider
-      appId={APP_ID}
-      userId={user.id}
+      userId={user?.id}
       userName={userName}
-      userEmail={user.email}
+      userEmail={user?.email ?? undefined}
     >
       <Header locale={locale} />
       {children}

@@ -7,7 +7,6 @@ import {
   SpineMessage,
   SpineMessageContext,
   ThreadResponse,
-  WebRendererPayload,
 } from './types';
 
 const POLL_INTERVAL_MS = 3000;
@@ -116,6 +115,10 @@ export function useThread(): UseThreadResult {
   // always reads the freshest value without re-subscribing the interval.
   const cursorRef = useRef<string | null>(null);
 
+  // Latest poll() kept in a ref so send() can trigger an immediate poll
+  // (reusing the single shared loop) without re-subscribing anything.
+  const pollRef = useRef<(() => Promise<void>) | null>(null);
+
   const ingest = useCallback((incoming: SpineMessage[]) => {
     setMessages((prev) => {
       const merged = mergeMessages(prev, incoming);
@@ -170,6 +173,9 @@ export function useThread(): UseThreadResult {
       // ignore
     }
   }, [ingest]);
+
+  // Keep the ref pointing at the freshest poll closure.
+  pollRef.current = poll;
 
   // One-time session exchange (if ?t= is present) + initial poll, then a single
   // shared 3s interval. Cleared on unmount so no orphaned pollers.
@@ -237,19 +243,16 @@ export function useThread(): UseThreadResult {
         }
 
         setHasSession(true);
-        const payload = (await res.json()) as WebRendererPayload;
-        if (payload && payload.kind === 'web' && payload.text) {
-          const reply: SpineMessage = {
-            id: makeClientMsgId(),
-            sender: 'wrdo',
-            channel: 'web',
-            text: payload.text,
-            created_at: new Date().toISOString(),
-            actions: payload.actions,
-            pending: false,
-          };
-          setMessages((prev) => mergeMessages(prev, [reply]));
-        }
+        // Deliberately do NOT inject the POST response's wrdo reply into state.
+        // The reply is the spine's, with its own server id and no client_msg_id;
+        // injecting it locally (with a freshly-minted id) would collide with the
+        // same reply arriving on the next poll under a DIFFERENT id, which dedupe
+        // can't reconcile → a transient duplicate bubble. Instead let the poll
+        // loop deliver the reply as the single source of truth. (A 401/failure
+        // is already handled by the !res.ok branch above, which drops the
+        // optimistic echo.) Trigger an immediate poll so the reply appears fast
+        // rather than waiting up to 3s.
+        void pollRef.current?.();
       } catch {
         setMessages((prev) =>
           prev.filter((m) => m.client_msg_id !== clientMsgId)
@@ -262,6 +265,14 @@ export function useThread(): UseThreadResult {
   return { messages, send, unreadCount, loading, hasSession };
 }
 
+// Module-level guard so the single-use token exchange runs at most once per
+// page load for a given token. React Strict Mode (dev) double-invokes effects
+// and a genuine double-mount can both fire exchangeTokenIfPresent twice; the
+// 2nd call would burn nothing (verifyAndBurn is single-use) and harmlessly 401,
+// but it's a wasted request and a race. Keying off the token value means a
+// second attempt with the SAME ?t= is a no-op.
+let exchangedToken: string | null = null;
+
 /**
  * If the URL carries a `?t=<token>` handoff token, exchange it for the
  * wrdo_spine httpOnly cookie, then strip `t` from the URL via
@@ -273,6 +284,11 @@ async function exchangeTokenIfPresent(): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('t');
   if (!token) return;
+
+  // Already exchanged this exact token this page load — no-op (Strict Mode /
+  // double-mount safety).
+  if (exchangedToken === token) return;
+  exchangedToken = token;
 
   try {
     await fetch('/store/session/exchange', {
